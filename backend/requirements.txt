@@ -1,0 +1,18 @@
+    fastapi==0.115.2
+uvicorn[standard]==0.30.6
+pymongo==4.9.2
+motor==3.6.0
+
+python-dotenv==1.0.1
+pydantic==2.8.2
+pydantic-settings==2.4.0
+python-multipart==0.0.9
+pypdf==5.1.0
+chromadb==0.5.5
+# Note: chromadb may require native hnswlib for fastest search.
+# If MSVC is unavailable, installation of chroma-hnswlib can fail.
+# In that case, we can switch to a pure-Python alternative or instruct you to install MSVC Build Tools.
+
+sentence-transformers==3.0.1
+
+tqdm==4.66.5
