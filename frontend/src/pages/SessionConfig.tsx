@@ -52,24 +52,34 @@ export default function SessionConfig() {
     <section className="bg-white border rounded-lg p-5">
       <h1 className="text-xl font-semibold mb-4">Create Session</h1>
 
-      <form onSubmit={onSubmit} className="space-y-4">
+      <form onSubmit={onSubmit} className="space-y-5">
         <div>
           <div className="text-sm font-medium mb-2">Mode</div>
-          <div className="flex gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+
             {(['Simulator', 'Manual', 'Replay'] as Mode[]).map((m) => (
-              <label key={m} className="flex items-center gap-2 text-sm">
+              <label
+                key={m}
+                className={
+                  mode === m
+                    ? 'flex items-center justify-center gap-2 rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-medium text-blue-800'
+                    : 'flex items-center justify-center gap-2 rounded-md border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50'
+                }
+              >
                 <input
                   type="radio"
                   name="mode"
                   value={m}
                   checked={mode === m}
                   onChange={() => setMode(m)}
+                  className="accent-blue-600"
                 />
                 {m}
               </label>
             ))}
           </div>
         </div>
+
 
         <div>
           <label className="block text-sm font-medium mb-1">Product/Service context</label>
