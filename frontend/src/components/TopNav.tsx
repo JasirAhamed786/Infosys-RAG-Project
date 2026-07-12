@@ -4,7 +4,8 @@ import { NavLink } from 'react-router-dom'
 export default function TopNav() {
   return (
     <header className="sticky top-0 z-50 border-b border-slate-200/60 bg-white/70 backdrop-blur-md">
-      <div className="mx-auto max-w-4xl px-4 py-3.5 flex items-center justify-between gap-4">
+      {/* Keeping our widescreen max-w-7xl enterprise layout! */}
+      <div className="mx-auto max-w-7xl px-4 md:px-8 py-3.5 flex items-center justify-between gap-4">
         {/* Brand Logo & Title */}
         <div className="flex items-center gap-3">
           <div className="relative h-10 w-10 rounded-xl bg-blue-600 text-white flex items-center justify-center text-sm font-bold shadow-md shadow-blue-600/20 overflow-hidden">
@@ -13,20 +14,20 @@ export default function TopNav() {
             <span className="relative">C</span>
           </div>
           <div className="leading-tight">
-              <div className="font-bold text-slate-900 text-base tracking-tight">
-                Clario 
-                
-              </div>
+            <div className="font-bold text-slate-900 text-base tracking-tight">
+              Clario 
+            </div>
 
-            <div className="text-xs font-medium text-slate-500 flex items-center gap-1 mt-0.5">
-              <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-
+            {/* 👇 CHANGED: Added "Customer Support Agent" with a pulsing green status dot! */}
+            <div className="text-xs font-semibold text-slate-500 flex items-center gap-1.5 mt-0.5">
+              <span className="inline-block h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span>Customer Support Agent</span>
             </div>
           </div>
         </div>
 
         {/* Navigation Tabs */}
-        <nav className="flex flex-wrap items-center gap-2 text-sm font-semibold justify-end">
+        <nav className="flex items-center gap-2 text-sm font-semibold justify-end overflow-x-auto scrollbar-none">
           <NavLink
             to="/session"
             className={({ isActive }: { isActive: boolean }) =>
@@ -122,4 +123,3 @@ export default function TopNav() {
     </header>
   )
 }
-

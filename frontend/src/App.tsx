@@ -1,5 +1,7 @@
 import React from 'react'
-import { Navigate, Route, Routes } from 'react-router-dom'
+
+import { Navigate, Route, Routes, useLocation } from 'react-router-dom' // 1. Added useLocation
+import { motion, AnimatePresence } from 'framer-motion' // 2. Added motion imports
 import TopNav from './components/TopNav'
 import SessionConfig from './pages/SessionConfig'
 import KnowledgeBaseUpload from './pages/KnowledgeBaseUpload'
@@ -11,14 +13,17 @@ import ReportsPlaceholder from './pages/ReportsPlaceholder'
 import AnalyticsDashboardPlaceholder from './pages/AnalyticsDashboardPlaceholder'
 
 export default function App() {
+  const location = useLocation(); // 3. Hook to track current page
+
   return (
     <div className="min-h-screen relative">
       <div className="app-bg" aria-hidden="true" />
 
       <TopNav />
 
-      <div className="mx-auto max-w-4xl px-4 pt-6">
+      <div className="mx-auto max-w-7xl px-4 md:px-8 pt-6">
         <section className="glass rounded-3xl p-6 md:p-8 overflow-hidden fade-in-up">
+          {/* ... existing header content ... */}
           <div className="absolute inset-0 pointer-events-none opacity-70">
             <div className="absolute -top-16 -left-16 h-40 w-40 rounded-full bg-blue-500/20 blur-2xl" />
             <div className="absolute -bottom-16 -right-16 h-40 w-40 rounded-full bg-emerald-500/20 blur-2xl" />
@@ -30,55 +35,48 @@ export default function App() {
                 <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
                 Ready
               </div>
-
-
               <h1 className="mt-4 text-3xl md:text-4xl font-extrabold tracking-tight text-slate-900">
                 Clario - AI <span className="text-blue-700">Coaching</span> Assistant
               </h1>
-
               <p className="mt-2 text-sm md:text-base text-slate-600 max-w-xl">
                 Configure your session simulator or ingest your knowledge base to power faster, more accurate coaching.
               </p>
             </div>
-
+            {/* ... stats grid ... */}
             <div className="grid grid-cols-3 gap-3 w-full md:w-auto">
-              <div className="rounded-2xl border border-slate-200 bg-white/70 p-3 text-center">
-                <div className="text-xs font-semibold text-slate-500">Modes</div>
-                <div className="mt-1 text-lg font-bold text-slate-900">3</div>
-              </div>
-              <div className="rounded-2xl border border-slate-200 bg-white/70 p-3 text-center">
-                <div className="text-xs font-semibold text-slate-500">RAG</div>
-                <div className="mt-1 text-lg font-bold text-slate-900">Upload</div>
-              </div>
-              <div className="rounded-2xl border border-slate-200 bg-white/70 p-3 text-center">
-                <div className="text-xs font-semibold text-slate-500">API</div>
-                <div className="mt-1 text-lg font-bold text-slate-900">Ready</div>
-              </div>
+              <div className="rounded-2xl border border-slate-200 bg-white/70 p-3 text-center"><div className="text-xs font-semibold text-slate-500">Modes</div><div className="mt-1 text-lg font-bold text-slate-900">3</div></div>
+              <div className="rounded-2xl border border-slate-200 bg-white/70 p-3 text-center"><div className="text-xs font-semibold text-slate-500">RAG</div><div className="mt-1 text-lg font-bold text-slate-900">Upload</div></div>
+              <div className="rounded-2xl border border-slate-200 bg-white/70 p-3 text-center"><div className="text-xs font-semibold text-slate-500">API</div><div className="mt-1 text-lg font-bold text-slate-900">Ready</div></div>
             </div>
           </div>
         </section>
       </div>
 
-      <main className="mx-auto max-w-4xl p-4">
-
+      <main className="mx-auto max-w-7xl px-4 md:px-8 pb-12">
         <div className="py-6">
-          <Routes>
-            <Route path="/" element={<Navigate to="/session" replace />} />
-            <Route path="/session" element={<SessionConfig />} />
-            <Route path="/knowledge" element={<KnowledgeBaseUpload />} />
-
-            {/* Milestone 2/3/4 placeholders (scaffolding) */}
-            <Route path="/console" element={<LiveConsolePlaceholder />} />
-            <Route path="/coaching" element={<CoachingFeedPlaceholder />} />
-            <Route path="/escalation" element={<EscalationAlertsPlaceholder />} />
-            <Route path="/reports" element={<ReportsPlaceholder />} />
-            <Route path="/analytics" element={<AnalyticsDashboardPlaceholder />} />
-          </Routes>
+          {/* 4. Animation Wrapper */}
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={location.pathname}
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -15 }}
+              transition={{ duration: 0.3, ease: "easeInOut" }}
+            >
+              <Routes location={location} key={location.pathname}>
+                <Route path="/" element={<Navigate to="/session" replace />} />
+                <Route path="/session" element={<SessionConfig />} />
+                <Route path="/knowledge" element={<KnowledgeBaseUpload />} />
+                <Route path="/console" element={<LiveConsolePlaceholder />} />
+                <Route path="/coaching" element={<CoachingFeedPlaceholder />} />
+                <Route path="/escalation" element={<EscalationAlertsPlaceholder />} />
+                <Route path="/reports" element={<ReportsPlaceholder />} />
+                <Route path="/analytics" element={<AnalyticsDashboardPlaceholder />} />
+              </Routes>
+            </motion.div>
+          </AnimatePresence>
         </div>
       </main>
     </div>
   )
 }
-
-
-
