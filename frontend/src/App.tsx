@@ -4,6 +4,12 @@ import TopNav from './components/TopNav'
 import SessionConfig from './pages/SessionConfig'
 import KnowledgeBaseUpload from './pages/KnowledgeBaseUpload'
 
+import LiveConsolePlaceholder from './pages/LiveConsolePlaceholder'
+import CoachingFeedPlaceholder from './pages/CoachingFeedPlaceholder'
+import EscalationAlertsPlaceholder from './pages/EscalationAlertsPlaceholder'
+import ReportsPlaceholder from './pages/ReportsPlaceholder'
+import AnalyticsDashboardPlaceholder from './pages/AnalyticsDashboardPlaceholder'
+
 export default function App() {
   return (
     <div className="min-h-screen relative">
@@ -60,6 +66,13 @@ export default function App() {
             <Route path="/" element={<Navigate to="/session" replace />} />
             <Route path="/session" element={<SessionConfig />} />
             <Route path="/knowledge" element={<KnowledgeBaseUpload />} />
+
+            {/* Milestone 2/3/4 placeholders (scaffolding) */}
+            <Route path="/console" element={<LiveConsolePlaceholder />} />
+            <Route path="/coaching" element={<CoachingFeedPlaceholder />} />
+            <Route path="/escalation" element={<EscalationAlertsPlaceholder />} />
+            <Route path="/reports" element={<ReportsPlaceholder />} />
+            <Route path="/analytics" element={<AnalyticsDashboardPlaceholder />} />
           </Routes>
         </div>
       </main>

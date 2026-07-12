@@ -32,3 +32,19 @@ def startup_log():
 app.include_router(sessions_router, prefix="/api")
 app.include_router(knowledge_router, prefix="/api")
 
+# Milestone 2/3/4 scaffolding routes (stubs)
+from app.routers.simulator import router as simulator_router
+from app.routers.conversation import router as conversation_router
+from app.routers.coaching import router as coaching_router
+from app.routers.escalation import router as escalation_router
+from app.routers.reports import router as reports_router
+from app.routers.analytics import router as analytics_router
+
+app.include_router(simulator_router, prefix="/api")
+app.include_router(conversation_router, prefix="/api")
+app.include_router(coaching_router, prefix="/api")
+app.include_router(escalation_router, prefix="/api")
+app.include_router(reports_router, prefix="/api")
+app.include_router(analytics_router, prefix="/api")
+
+
