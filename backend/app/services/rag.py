@@ -81,9 +81,8 @@ class RAGService:
             metadatas=metadatas,
         )
 
-        if persist:
-            # PersistentClient saves automatically, but calling persist is safe across versions.
-            self.chroma_client.persist()
+        # Removed self.chroma_client.persist() because PersistentClient
+        # in modern ChromaDB handles persistence automatically on add().
 
     def query_chroma(self, collection_id: str, query: str, top_k: int = 3):
         collection = self.chroma_client.get_collection(name=collection_id)
@@ -111,4 +110,3 @@ class RAGService:
 
 
 rag_service = RAGService()
-
