@@ -68,7 +68,11 @@ class RAGService:
         embeddings: list[list[float]],
         persist: bool = True,
     ):
-        collection = self.chroma_client.get_or_create_collection(name=collection_id)
+        # 👇 CRITICAL FIX: Explicitly set hnsw:space to cosine for accurate similarity % scores! 👇
+        collection = self.chroma_client.get_or_create_collection(
+            name=collection_id,
+            metadata={"hnsw:space": "cosine"}
+        )
 
         ids = [f"chunk_{i}" for i in range(len(chunks))]
         metadatas = [{"chunk_index": i} for i in range(len(chunks))]
@@ -90,7 +94,7 @@ class RAGService:
         q_vec = self.embedder.encode([query], convert_to_numpy=True)[0].tolist()
 
         # query returns distances; we convert to a similarity-like score
-        # Chroma uses cosine distance by default.
+        # Now that we explicitly set Cosine space above, this formula is 100% accurate!
         results = collection.query(
             query_embeddings=[q_vec],
             n_results=top_k,
