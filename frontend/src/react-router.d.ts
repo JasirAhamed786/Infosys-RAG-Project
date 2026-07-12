@@ -4,4 +4,6 @@ declare module 'react-router-dom' {
   export const Route: any
   export const Navigate: any
   export const NavLink: any
+  export const useLocation: any
 }
+

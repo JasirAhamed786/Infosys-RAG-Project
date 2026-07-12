@@ -1,16 +1,18 @@
 import React from 'react'
 
-import { Navigate, Route, Routes, useLocation } from 'react-router-dom' // 1. Added useLocation
-import { motion, AnimatePresence } from 'framer-motion' // 2. Added motion imports
+import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
+import { motion, AnimatePresence } from 'framer-motion'
 import TopNav from './components/TopNav'
 import SessionConfig from './pages/SessionConfig'
 import KnowledgeBaseUpload from './pages/KnowledgeBaseUpload'
+import Home from './pages/Home'
 
 import LiveConsolePlaceholder from './pages/LiveConsolePlaceholder'
 import CoachingFeedPlaceholder from './pages/CoachingFeedPlaceholder'
 import EscalationAlertsPlaceholder from './pages/EscalationAlertsPlaceholder'
 import ReportsPlaceholder from './pages/ReportsPlaceholder'
 import AnalyticsDashboardPlaceholder from './pages/AnalyticsDashboardPlaceholder'
+
 
 export default function App() {
   const location = useLocation(); // 3. Hook to track current page
@@ -64,8 +66,9 @@ export default function App() {
               transition={{ duration: 0.3, ease: "easeInOut" }}
             >
               <Routes location={location} key={location.pathname}>
-                <Route path="/" element={<Navigate to="/session" replace />} />
+                <Route path="/" element={<Home />} />
                 <Route path="/session" element={<SessionConfig />} />
+
                 <Route path="/knowledge" element={<KnowledgeBaseUpload />} />
                 <Route path="/console" element={<LiveConsolePlaceholder />} />
                 <Route path="/coaching" element={<CoachingFeedPlaceholder />} />

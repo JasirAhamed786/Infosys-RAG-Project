@@ -29,6 +29,19 @@ export default function TopNav() {
         {/* Navigation Tabs */}
         <nav className="flex items-center gap-2 text-sm font-semibold justify-end overflow-x-auto scrollbar-none">
           <NavLink
+            to="/"
+            className={({ isActive }: { isActive: boolean }) =>
+              `relative px-3 py-2 rounded-xl transition-all duration-150 select-none ${
+                isActive
+                  ? 'text-blue-800 font-bold bg-blue-50 border-blue-100/90'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70 border border-transparent'
+              }`
+            }
+          >
+            <span className="relative z-10">Home</span>
+          </NavLink>
+
+          <NavLink
             to="/session"
             className={({ isActive }: { isActive: boolean }) =>
               `relative px-3 py-2 rounded-xl transition-all duration-150 select-none ${
@@ -40,6 +53,7 @@ export default function TopNav() {
           >
             <span className="relative z-10">Session Config</span>
           </NavLink>
+
 
           <NavLink
             to="/knowledge"
