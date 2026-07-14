@@ -4,7 +4,6 @@ from typing import Iterable
 import chromadb
 from chromadb.config import Settings as ChromaSettings
 from sentence_transformers import SentenceTransformer
-
 from app.core.config import settings
 
 
