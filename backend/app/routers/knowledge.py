@@ -21,6 +21,7 @@ from uuid import uuid4
 from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 from pydantic import BaseModel
 
+from app.core.config import settings
 from app.services.mongo import mongo
 from app.services.rag import rag_service
 
@@ -51,6 +52,7 @@ class UploadResponse(BaseModel):
     filename: str
     chunk_count: int
     total_chunks_in_collection: int
+    chroma_collection_id: str
 
 
 class CollectionStatsResponse(BaseModel):
@@ -108,6 +110,7 @@ def upload_knowledge(
         filename=filename,
         chunk_count=chunk_count,
         total_chunks_in_collection=stats["total_chunks"],
+        chroma_collection_id=settings.CHROMA_COLLECTION_NAME,
     )
 
 

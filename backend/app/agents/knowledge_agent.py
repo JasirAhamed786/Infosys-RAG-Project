@@ -58,7 +58,7 @@ Output format:
 }"""
 
 # Minimum similarity threshold to consider a result relevant
-MIN_SIMILARITY_THRESHOLD = 0.35
+MIN_SIMILARITY_THRESHOLD = 0.15
 
 
 def run_knowledge_agent(
@@ -89,12 +89,10 @@ def run_knowledge_agent(
     """
     mongo.connect()
 
-    # Build a better search query by combining intent + customer message
-    search_query = f"{intent}: {query_text}"
-    if product_context:
-        search_query = f"[{product_context}] {search_query}"
+    # Use clean natural language query — no intent/product prefix pollution
+    search_query = query_text.strip()
 
-    print(f"[knowledge_agent] Searching with query: {search_query[:200]}...")
+    print(f"[knowledge_agent] Searching with clean query: {search_query[:200]}...")
 
     # Query the shared ChromaDB collection
     try:

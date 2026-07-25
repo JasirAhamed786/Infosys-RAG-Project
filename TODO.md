@@ -1,38 +1,15 @@
-# Milestone 2 - COMPLETE ✅
+# Milestone 2 Bug Fixes — Implementation Progress
 
-All tasks have been implemented and tested. See summary below:
+## Bug 1: Upload Endpoint — Missing `chroma_collection_id`
+- [x] Add `from app.core.config import settings` import to `knowledge.py`
+- [x] Add `chroma_collection_id: str` field to `UploadResponse` model in `knowledge.py`
+- [x] Include `chroma_collection_id=settings.CHROMA_COLLECTION_NAME` in upload return
 
-## Step 0: Fix RAG Architecture (Shared Collection) ✅
-- **rag.py**: Refactored to use single shared ChromaDB collection `"clario_knowledge_base"` with metadata tagging (`source_document`, `chunk_index`, `upload_date`)
-- **knowledge.py**: Updated upload endpoint to store in shared collection; query supports optional metadata filters
-- **MongoDB**: Removed per-file `chroma_collection_id` tracking
+## Bug 2: Knowledge Agent — Query Pollution & Threshold
+- [x] Fix `search_query = query_text.strip()` (remove intent/product prefix prepending)
+- [x] Change `MIN_SIMILARITY_THRESHOLD` from `0.35` → `0.15`
 
-## Step 1: LLM Client & Config ✅
-- **config.py**: Added `GROQ_API_KEY`, `GEMINI_API_KEY`, model names, retry settings
-- **llm_client.py**: Full Groq + Gemini clients with streaming, retry-with-backoff for 429s, JSON parsing with retry
-
-## Step 2: Build 3 Real Agents ✅
-- **simulator_agent.py**: Groq Llama 3.3 70B, streaming, emotional continuity tracking, frustration adjustment, MongoDB persistence
-- **intent_sentiment_agent.py**: Groq Llama 3.1 8B, strict JSON-only output, heuristic fallback when API unavailable
-- **knowledge_agent.py**: Gemini 2.0 Flash, shared ChromaDB querying, relevance explanation, "no results" handling
-
-## Step 3: Pipeline Integration ✅
-- **pipeline.py**: Staged flow (Intent → conditional Knowledge → Simulator), safe error handling per agent, nice logging
-- **schemas.py**: Updated message schema with intent_sentiment_result, knowledge_result, frustration_level fields
-- **simulator.py + conversation.py**: Real pipeline integration, streaming endpoint for SSE
-- **main.py**: Clean router registration, Milestone 2 title
-
-## Step 4: Frontend Updates ✅
-- **api.ts**: All API functions (create session, start simulator, turn, stream URL, knowledge query)
-- **LiveConsole.tsx**: Full Simulator Mode with:
-  - Session config form (creates session + starts simulator)
-  - Real-time streaming via EventSource
-  - Intent/sentiment analysis badges (emotion, frustration, trend)
-  - Knowledge panel with relevance scores, source documents, "why relevant" explanations
-  - Professional UI matching existing design system
-- **App.tsx**: Route updated to use real LiveConsole
-
-## Step 5: Dependencies & Testing ✅
-- **requirements.txt**: Added `groq`, `google-generativeai`, `httpx`
-- **test_milestone2.py**: Tests all 3 agents with 3 scenarios each, includes "good vs bad" output guide
+## Bug 3: Intent & Sentiment Agent — Model & Heuristic Fallback
+- [x] Use `getattr(settings, "GROQ_INTENT_MODEL", "llama-3.1-8b-instant")` for dynamic model
+- [x] Fall back to `_heuristic_analysis` when API returns error (not just when no API key)
 
