@@ -7,7 +7,7 @@ import SessionConfig from './pages/SessionConfig'
 import KnowledgeBaseUpload from './pages/KnowledgeBaseUpload'
 import Home from './pages/Home'
 
-import LiveConsolePlaceholder from './pages/LiveConsolePlaceholder'
+import LiveConsole from './pages/LiveConsole'
 import CoachingFeedPlaceholder from './pages/CoachingFeedPlaceholder'
 import EscalationAlertsPlaceholder from './pages/EscalationAlertsPlaceholder'
 import ReportsPlaceholder from './pages/ReportsPlaceholder'
@@ -70,7 +70,7 @@ export default function App() {
                 <Route path="/session" element={<SessionConfig />} />
 
                 <Route path="/knowledge" element={<KnowledgeBaseUpload />} />
-                <Route path="/console" element={<LiveConsolePlaceholder />} />
+                <Route path="/console" element={<LiveConsole />} />
                 <Route path="/coaching" element={<CoachingFeedPlaceholder />} />
                 <Route path="/escalation" element={<EscalationAlertsPlaceholder />} />
                 <Route path="/reports" element={<ReportsPlaceholder />} />
