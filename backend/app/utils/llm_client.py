@@ -9,6 +9,13 @@ Provides:
 - Streaming support for the simulator agent (stream=True)
 - Retry-with-backoff for 429 rate limit errors
 - JSON-only mode with parsing + retry for intent/sentiment agent
+
+FIX: GroqClient.generate_json() previously only caught JSONParseError,
+so any other API error (bad model, auth, malformed request) raised
+straight out of the function instead of returning an error dict.
+Callers' silent fallback logic then masked the real cause.
+generate_json() now catches everything and ALWAYS returns a dict,
+printing the real error so it's visible in the backend console.
 """
 
 from __future__ import annotations
@@ -132,22 +139,37 @@ class GroqClient:
             raise LLMError(f"Groq API error: {e}")
 
     def generate_json(self, model: str, system_prompt: str, user_prompt: str, temperature: float = 0.7, max_tokens: int = 1024) -> dict[str, Any]:
+        """Always returns a dict. On ANY failure (auth, bad model, rate
+        limit exhausted, malformed JSON), returns {"error": "..."} instead
+        of raising, and prints the real reason so it's visible in logs."""
+        text = None
+
         def _do_generate():
             response = self._call_groq(
                 model=model,
                 messages=[{"role": "system", "content": system_prompt}, {"role": "user", "content": user_prompt}],
                 json_mode=True, temperature=temperature, max_tokens=max_tokens,
             )
-            text = response.choices[0].message.content
-            if not text:
+            content = response.choices[0].message.content
+            if not content:
                 raise LLMError("Empty response from Groq")
-            return text
+            return content
+
         try:
             text = _retry_with_backoff(_do_generate)
             return _parse_json_response(text)
         except JSONParseError as e:
             print(f"[GroqClient] JSON parse error: {e}")
-            return {"error": "json_parse_failed", "raw": text if 'text' in locals() else "unknown"}
+            return {"error": "json_parse_failed", "raw": text or "unknown"}
+        except RateLimitError as e:
+            print(f"[GroqClient] Rate limit error in generate_json (model={model}): {e}")
+            return {"error": f"rate_limited: {e}"}
+        except LLMError as e:
+            print(f"[GroqClient] API error in generate_json (model={model}): {e}")
+            return {"error": f"llm_error: {e}"}
+        except Exception as e:
+            print(f"[GroqClient] Unexpected error in generate_json (model={model}): {type(e).__name__}: {e}")
+            return {"error": f"unexpected_error: {e}"}
 
     def generate_stream(self, model: str, system_prompt: str, user_prompt: str, temperature: float = 0.7, max_tokens: int = 1024) -> Generator[str, None, None]:
         if not self.api_key:
@@ -201,8 +223,8 @@ class GeminiClient:
         try:
             text = _retry_with_backoff(_do_generate)
             return _parse_json_response(text)
-        except (RateLimitError, JSONParseError, Exception) as e:
-            print(f"[GeminiClient] Error: {e}")
+        except Exception as e:
+            print(f"[GeminiClient] Error in generate_json (model={model}): {type(e).__name__}: {e}")
             return {"error": str(e), "results": [], "note": "Gemini API call failed"}
 
 

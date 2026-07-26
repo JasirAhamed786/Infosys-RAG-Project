@@ -59,20 +59,55 @@ def run_pipeline(
         dict with results from all pipeline stages.
     """
     # ============================================================
-    # Stage 1: Intent & Sentiment Analysis (ALWAYS runs first)
+    # Extract the actual customer message to analyze
+    # Intent & Knowledge should analyze what the CUSTOMER said,
+    # not what the agent typed. We look for the last customer
+    # message in the conversation history.
     # ============================================================
-    print(f"[pipeline] Stage 1: Intent & Sentiment Analysis (turn {turn_index})")
-    intent_sentiment = _safe_run_agent(
-        agent_name="intent_sentiment",
-        agent_func=run_intent_sentiment_agent,
-        session_id=session_id,
-        customer_message=input_message,
-        turn_index=turn_index,
-        conversation_context=conversation_history,
-    )
-    print(f"[pipeline] Intent: {intent_sentiment.get('intent')} | "
-          f"Emotion: {intent_sentiment.get('emotion')} | "
-          f"Frustration: {intent_sentiment.get('frustration_score')}")
+    customer_message_to_analyze = ""
+    if conversation_history:
+        # Find the last customer message from conversation history
+        for msg in reversed(conversation_history):
+            if msg.get("role") == "customer":
+                customer_message_to_analyze = msg.get("content", "")
+                break
+
+    # If no customer message found in history, use input_message
+    # (this handles the first-turn initiation case)
+    if not customer_message_to_analyze:
+        customer_message_to_analyze = input_message
+
+    print(f"[pipeline] customer_message_to_analyze: "
+          f"'{customer_message_to_analyze[:80]}{'...' if len(customer_message_to_analyze) > 80 else ''}'")
+
+    # ============================================================
+    # Stage 1: Intent & Sentiment Analysis (skipped if no message)
+    # ============================================================
+    skip_intent = not customer_message_to_analyze or not customer_message_to_analyze.strip()
+    if skip_intent:
+        print(f"[pipeline] Stage 1: Intent & Sentiment SKIPPED — no customer message to analyze")
+        intent_sentiment = {
+            "agent": "intent_sentiment",
+            "turn_index": turn_index,
+            "intent": "general_question",
+            "emotion": "neutral",
+            "frustration_score": 30,
+            "satisfaction_trend": "baseline",
+            "note": "skipped — no customer message available for analysis",
+        }
+    else:
+        print(f"[pipeline] Stage 1: Intent & Sentiment Analysis (turn {turn_index})")
+        intent_sentiment = _safe_run_agent(
+            agent_name="intent_sentiment",
+            agent_func=run_intent_sentiment_agent,
+            session_id=session_id,
+            customer_message=customer_message_to_analyze,
+            turn_index=turn_index,
+            conversation_context=conversation_history,
+        )
+        print(f"[pipeline] Intent: {intent_sentiment.get('intent')} | "
+              f"Emotion: {intent_sentiment.get('emotion')} | "
+              f"Frustration: {intent_sentiment.get('frustration_score')}")
 
     # Check if intent suggests customer needs information
     info_needing_intents = [
@@ -80,7 +115,7 @@ def run_pipeline(
         "general_question", "how_to", "feature_request",
         "account_access", "payment_dispute", "information",
     ]
-    should_query_knowledge = any(
+    should_query_knowledge = not skip_intent and any(
         keyword in str(intent_sentiment.get("intent", "")).lower()
         for keyword in info_needing_intents
     )
@@ -95,7 +130,15 @@ def run_pipeline(
         "note": "skipped — intent did not suggest information need",
     }
 
-    if should_query_knowledge:
+    if skip_intent:
+        print(f"[pipeline] Stage 2: Knowledge SKIPPED — no customer message available")
+        knowledge_result = {
+            "agent": "knowledge_recommendation",
+            "turn_index": turn_index,
+            "results": [],
+            "note": "no relevant knowledge found",
+        }
+    elif should_query_knowledge:
         print(f"[pipeline] Stage 2: Knowledge Recommendation (intent: "
               f"{intent_sentiment.get('intent')})")
         knowledge_result = _safe_run_agent(
@@ -105,7 +148,7 @@ def run_pipeline(
             intent=intent_sentiment.get("intent", "general_question"),
             persona=persona,
             product_context=product_context,
-            query_text=input_message,
+            query_text=customer_message_to_analyze,
             turn_index=turn_index,
         )
         result_count = len(knowledge_result.get("results", []))

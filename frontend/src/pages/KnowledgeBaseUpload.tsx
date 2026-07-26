@@ -28,7 +28,7 @@ export default function KnowledgeBaseUpload() {
   }, [state.fileSizeBytes])
 
   const allowedUiExtensions = ['.pdf', '.txt', '.md']
-  const allowedBackendExtensions = ['.pdf', '.txt']
+  const allowedBackendExtensions = ['.pdf', '.txt', '.md']
 
   function getExtension(name: string): string {
     const idx = name.lastIndexOf('.')
@@ -43,7 +43,8 @@ export default function KnowledgeBaseUpload() {
     }
 
     if (!allowedBackendExtensions.includes(ext)) {
-      return 'Backend currently only supports .pdf and .txt. Please select a .pdf or .txt file.'
+      // Dynamically generate the error message based on your array
+      return `Backend currently only supports ${allowedBackendExtensions.join(', ')}. Please select a valid file.`
     }
 
     return null
@@ -289,7 +290,6 @@ export default function KnowledgeBaseUpload() {
             </div>
           </div>
         )}
-
 
       </div>
     </section>

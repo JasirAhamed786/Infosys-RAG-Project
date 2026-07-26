@@ -41,7 +41,7 @@ class RAGService:
         )
 
     def extract_text_from_bytes(self, raw_bytes: bytes, suffix: str) -> str:
-        if suffix == ".txt":
+        if suffix in (".txt", ".md"):
             return raw_bytes.decode("utf-8", errors="ignore")
 
         if suffix == ".pdf":

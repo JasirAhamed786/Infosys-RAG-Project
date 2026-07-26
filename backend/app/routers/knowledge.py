@@ -76,8 +76,8 @@ def upload_knowledge(
     filename = file.filename or "upload"
     suffix = Path(filename).suffix.lower()
 
-    if suffix not in [".pdf", ".txt"]:
-        raise HTTPException(status_code=400, detail="Only PDF and .txt files are supported")
+    if suffix not in [".pdf", ".txt", ".md"]:
+        raise HTTPException(status_code=400, detail="Only PDF, .txt, and .md files are supported")
 
     raw_bytes = file.file.read()
     text = rag_service.extract_text_from_bytes(raw_bytes, suffix=suffix)

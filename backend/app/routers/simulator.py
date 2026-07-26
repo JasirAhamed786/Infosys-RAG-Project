@@ -77,6 +77,8 @@ def start_simulator(req: SimulatorStartRequest):
     thread_id = str(uuid4())
 
     # Run the pipeline to get the first customer message
+    # Note: input_message is empty — the pipeline handles this by skipping
+    # intent/knowledge stages and only running the simulator
     pipeline_result = run_pipeline(
         session_id=req.session_id,
         mode=req.mode,
@@ -91,11 +93,27 @@ def start_simulator(req: SimulatorStartRequest):
         "customer_message",
         "Hi, I need some help with an issue I'm having.",
     )
+    frustration_level = pipeline_result.get("customer_simulation", {}).get(
+        "internal_frustration_level", 35
+    )
+
+    # Persist the first customer message to MongoDB
+    now = dt.datetime.utcnow()
+    first_turn_index = pipeline_result.get("customer_simulation", {}).get("turn_index", 1)
+    mongo.messages.insert_one({
+        "_id": str(uuid4()),
+        "session_id": req.session_id,
+        "turn_index": first_turn_index,
+        "role": "customer",
+        "content": customer_msg,
+        "created_at": now,
+        "frustration_level": frustration_level,
+    })
 
     welcome = {
         "role": "customer",
         "content": customer_msg,
-        "turn_index": 1,
+        "turn_index": first_turn_index,
     }
 
     return {
