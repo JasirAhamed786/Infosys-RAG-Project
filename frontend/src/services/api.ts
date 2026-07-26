@@ -15,6 +15,7 @@ export interface UploadKnowledgeResponse {
   filename: string
   chunk_count: number
   total_chunks_in_collection: number
+  chroma_collection_id: string
 }
 
 export interface KnowledgeQueryRequest {

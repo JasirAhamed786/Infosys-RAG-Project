@@ -54,8 +54,8 @@ export default function App() {
         </section>
       </div>
 
-      <main className="mx-auto max-w-7xl px-4 md:px-8 pb-12">
-        <div className="py-6">
+      <main className="mx-auto max-w-7xl w-full px-4 md:px-8 pb-6 flex-1 min-h-0 flex flex-col">
+        <div className="py-6 flex-1 min-h-0 flex flex-col">
           {/* 4. Animation Wrapper */}
           <AnimatePresence mode="wait">
             <motion.div
@@ -64,6 +64,7 @@ export default function App() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -15 }}
               transition={{ duration: 0.3, ease: "easeInOut" }}
+              className="flex-1 min-h-0 flex flex-col"
             >
               <Routes location={location} key={location.pathname}>
                 <Route path="/" element={<Home />} />

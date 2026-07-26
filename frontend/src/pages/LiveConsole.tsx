@@ -5,7 +5,6 @@ import {
   simulatorTurn,
   getSimulatorStreamUrl,
   type CreateSessionModeBackend,
-  type SimulatorTurnResponse,
 } from '../services/api'
 
 // ─── Types ────────────────────────────────────────────────────────
@@ -103,7 +102,6 @@ export default function LiveConsole() {
     setError(null)
 
     try {
-      // Step 1: Create a session via the sessions API
       const sessionPayload = {
         mode,
         product_context: productContext,
@@ -113,7 +111,6 @@ export default function LiveConsole() {
       const sessionResult = await createSession(sessionPayload)
       const sessionId = sessionResult.session_id
 
-      // Step 2: Start the simulator with the created session
       const simResult = await startSimulator({
         session_id: sessionId,
         mode,
@@ -131,7 +128,6 @@ export default function LiveConsole() {
         persona: persona.trim() || null,
       })
 
-      // Add the first customer message
       const firstMsg = simResult.messages[0]
       if (firstMsg) {
         setMessages([{
@@ -156,7 +152,6 @@ export default function LiveConsole() {
     const currentTurn = messages.length
     const agentMsg = agentInput.trim()
 
-    // Add agent message to chat
     setMessages(prev => [...prev, {
       role: 'agent',
       content: agentMsg,
@@ -168,7 +163,6 @@ export default function LiveConsole() {
     setStreamingMessage('')
 
     try {
-      // First try streaming
       const streamUrl = getSimulatorStreamUrl(
         session.sessionId,
         agentMsg,
@@ -183,8 +177,6 @@ export default function LiveConsole() {
         if (event.data === '[DONE]') {
           eventSource.close()
           eventSourceRef.current = null
-
-          // Now get the full analysis from the turn endpoint
           finishTurn(agentMsg, currentTurn, fullMessage)
           return
         }
@@ -195,8 +187,6 @@ export default function LiveConsole() {
       eventSource.onerror = () => {
         eventSource.close()
         eventSourceRef.current = null
-
-        // If streaming failed, fall back to the message endpoint
         fallbackTurn(agentMsg, currentTurn)
       }
     } catch {
@@ -209,14 +199,12 @@ export default function LiveConsole() {
     setStreamingMessage('')
     setIsStreaming(false)
 
-    // Add the streamed customer message
     setMessages(prev => [...prev, {
       role: 'customer',
       content: streamedMessage,
       turnIndex: turnIndex + 1,
     }])
 
-    // Get analysis from the turn endpoint
     try {
       const turnResult = await simulatorTurn({
         session_id: session!.sessionId,
@@ -228,7 +216,6 @@ export default function LiveConsole() {
       setLatestIntent(turnResult.intent_sentiment)
       setLatestKnowledge(turnResult.knowledge)
 
-      // Update the last customer message with analysis
       setMessages(prev => {
         const updated = [...prev]
         const lastIdx = updated.length - 1
@@ -303,72 +290,75 @@ export default function LiveConsole() {
 
   // ─── Render ───────────────────────────────────────────────────
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="glass rounded-3xl p-6 md:p-8 relative overflow-hidden">
-        <div className="absolute -top-24 -left-24 h-64 w-64 rounded-full bg-emerald-500/10 blur-3xl" />
-        <div className="absolute -bottom-24 -right-24 h-64 w-64 rounded-full bg-blue-500/10 blur-3xl" />
-        <div className="relative">
-          <div className="flex items-center justify-between gap-4">
-            <div>
-              <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-white/60 px-4 py-2 text-xs font-semibold text-slate-700 shadow-sm">
-                <span className={`h-2 w-2 rounded-full ${session ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'} `} />
-                {session ? 'Session Active' : 'Configure Session'}
-              </div>
-              <h1 className="mt-4 text-3xl md:text-4xl font-extrabold tracking-tight text-slate-900">
-                Live <span className="text-emerald-700">Support</span> Console
-              </h1>
-              <p className="mt-2 text-sm md:text-base text-slate-600 max-w-xl">
-                {session
-                  ? `Simulator Mode • Session: ${session.sessionId.slice(0, 8)}...`
-                  : 'Configure a session below to start simulating real customer interactions.'}
-              </p>
+    <div className="flex flex-col min-h-0 h-full">
+      {/* ── Header Banner ── */}
+      <div className="shrink-0 bg-white border border-gray-200 rounded-2xl p-5 md:p-6 relative overflow-hidden shadow-sm mb-4">
+        <div className="absolute -top-20 -left-20 h-56 w-56 rounded-full bg-emerald-500/8 blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-20 -right-20 h-56 w-56 rounded-full bg-blue-500/8 blur-3xl pointer-events-none" />
+        <div className="relative flex items-center justify-between gap-4 flex-wrap">
+          <div>
+            <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50/70 px-3.5 py-1 text-xs font-semibold text-emerald-800 shadow-sm">
+              <span className={`h-2 w-2 rounded-full ${session ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'}`} />
+              {session ? 'Session Active' : 'Configure Session'}
             </div>
-            {session && (
-              <button
-                onClick={handleReset}
-                className="rounded-xl border border-slate-200 bg-white/70 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-all"
-              >
-                End Session
-              </button>
-            )}
+            <h1 className="mt-2.5 text-2xl md:text-3xl font-extrabold tracking-tight text-slate-900">
+              Live <span className="text-emerald-600">Support</span> Console
+            </h1>
+            <p className="mt-1 text-sm text-slate-500 max-w-2xl">
+              {session
+                ? `Simulator Mode Active • Session: ${session.sessionId.slice(0, 8)}... • Thread: ${session.threadId.slice(0, 8)}...`
+                : 'Configure a session below to start simulating real customer support interactions and testing AI assistance.'}
+            </p>
           </div>
+          {session && (
+            <button
+              onClick={handleReset}
+              className="shrink-0 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 hover:border-slate-300 shadow-sm transition-all"
+            >
+              <span className="flex items-center gap-2">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+                End Session
+              </span>
+            </button>
+          )}
         </div>
       </div>
 
-      {/* Session Config (shown when no session) */}
+      {/* ── Session Config (shown when no session) ── */}
       {!session && (
-        <section className="bg-white border border-gray-200 rounded-2xl shadow-sm p-8">
-          <form onSubmit={handleStartSession} className="space-y-6">
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+        <section className="bg-white border border-gray-200 rounded-2xl shadow-sm p-6 md:p-8 max-w-2xl mx-auto w-full">
+          <form onSubmit={handleStartSession} className="space-y-5">
+            <div className="space-y-4">
               {/* Mode */}
-              <div className="sm:col-span-2">
-                <label className="block text-sm font-semibold text-gray-800 mb-2">
+              <div>
+                <label className="block text-sm font-semibold text-gray-800 mb-1.5">
                   Conversation Mode
                 </label>
                 <select
                   value={mode}
                   onChange={(e) => setMode(e.target.value as CreateSessionModeBackend)}
-                  className="w-full rounded-xl border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-900 shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+                  className="w-full rounded-xl border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-900 bg-white shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
                   disabled={loading}
                 >
-                  <option value="Simulator">Simulator (AI-Generated Customer)</option>
-                  <option value="Manual">Manual (You Play Both Roles)</option>
-                  <option value="Replay">Replay (Review Past Sessions)</option>
+                  <option value="Simulator">Simulator — AI-Generated Customer</option>
+                  <option value="Manual">Manual — You Play Both Roles</option>
+                  <option value="Replay">Replay — Review Past Sessions</option>
                 </select>
               </div>
 
               {/* Product Context */}
               <div>
-                <label className="block text-sm font-semibold text-gray-800 mb-2">
+                <label className="block text-sm font-semibold text-gray-800 mb-1.5">
                   Product / Service Context <span className="text-rose-500">*</span>
                 </label>
                 <input
                   type="text"
                   value={productContext}
                   onChange={(e) => setProductContext(e.target.value)}
-                  className="w-full rounded-xl border border-gray-300 px-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
-                  placeholder="e.g., Retail Banking Support"
+                  className="w-full rounded-xl border border-gray-300 px-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 bg-white shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+                  placeholder="e.g., Retail Banking & Credit Card Support"
                   required
                   disabled={loading}
                 />
@@ -376,29 +366,29 @@ export default function LiveConsole() {
 
               {/* Persona */}
               <div>
-                <label className="block text-sm font-semibold text-gray-800 mb-2">
+                <label className="block text-sm font-semibold text-gray-800 mb-1.5">
                   Persona <span className="text-xs font-normal text-gray-400">(Optional)</span>
                 </label>
                 <input
                   type="text"
                   value={persona}
                   onChange={(e) => setPersona(e.target.value)}
-                  className="w-full rounded-xl border border-gray-300 px-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
-                  placeholder="e.g., Frustrated Customer"
+                  className="w-full rounded-xl border border-gray-300 px-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 bg-white shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+                  placeholder="e.g., Frustrated Customer demanding immediate resolution"
                   disabled={loading}
                 />
               </div>
 
               {/* Scenario */}
-              <div className="sm:col-span-2">
-                <label className="block text-sm font-semibold text-gray-800 mb-2">
+              <div>
+                <label className="block text-sm font-semibold text-gray-800 mb-1.5">
                   Scenario <span className="text-rose-500">*</span>
                 </label>
                 <textarea
                   value={scenario}
                   onChange={(e) => setScenario(e.target.value)}
-                  className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm text-gray-900 placeholder-gray-400 shadow-sm min-h-[100px] focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 resize-y"
-                  placeholder="Describe the customer's situation..."
+                  className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm text-gray-900 placeholder-gray-400 bg-white shadow-sm min-h-[100px] focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 resize-y"
+                  placeholder="Describe the customer's specific situation, problem statement, or goal..."
                   required
                   disabled={loading}
                 />
@@ -408,7 +398,7 @@ export default function LiveConsole() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full sm:w-auto inline-flex items-center justify-center rounded-xl bg-emerald-600 px-8 py-3.5 text-sm font-semibold text-white shadow-md shadow-emerald-600/20 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              className="w-full inline-flex items-center justify-center rounded-xl bg-emerald-600 px-8 py-3 text-sm font-semibold text-white shadow-md shadow-emerald-600/20 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
             >
               {loading ? (
                 <>
@@ -416,7 +406,7 @@ export default function LiveConsole() {
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                   </svg>
-                  Starting Simulator...
+                  Initializing Simulation Environment...
                 </>
               ) : (
                 <>
@@ -430,16 +420,15 @@ export default function LiveConsole() {
             </button>
           </form>
 
-          {/* Error */}
           {error && (
-            <div className="mt-6 rounded-xl bg-rose-50 border border-rose-200 p-4 flex items-start gap-3">
+            <div className="mt-5 rounded-xl bg-rose-50 border border-rose-200 p-4 flex items-start gap-3">
               <div className="shrink-0 text-rose-500 mt-0.5">
                 <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
               <div>
-                <h4 className="text-sm font-semibold text-rose-900">Error</h4>
+                <h4 className="text-sm font-semibold text-rose-900">Initialization Error</h4>
                 <p className="text-sm text-rose-700 mt-1">{error}</p>
               </div>
             </div>
@@ -447,168 +436,183 @@ export default function LiveConsole() {
         </section>
       )}
 
-      {/* Live Console (shown when session is active) */}
+      {/* ── Live Console Workspace (shown when session is active) ── */}
       {session && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left Panel: Conversation */}
-          <div className="lg:col-span-2 space-y-4">
-            
-            {/* Analysis Bar (Repaired missing HTML) */}
-            {latestIntent && (
-              <div className="flex flex-wrap items-center gap-4 rounded-full bg-white border border-gray-200 px-5 py-2.5 shadow-sm">
-                <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold border ${EMOTION_COLORS[latestIntent?.emotion || 'neutral'] || 'bg-slate-100 border-slate-300 text-slate-700'}`}>
+        <div className="flex-1 flex flex-col gap-4 min-h-0 overflow-y-auto">
+
+          {/* Real-time Analysis Summary Bar */}
+          {latestIntent && (
+            <div className="shrink-0 flex flex-wrap items-center justify-between gap-3 rounded-xl bg-white border border-gray-200 px-4 py-2.5 shadow-sm">
+              <div className="flex items-center gap-3">
+                <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold border ${EMOTION_COLORS[latestIntent?.emotion || 'neutral'] || 'bg-slate-100 border-slate-300 text-slate-700'}`}>
                   <span className="h-1.5 w-1.5 rounded-full bg-current" />
                   {latestIntent?.emotion || 'neutral'}
                 </span>
-                <span className="text-sm font-medium text-slate-600">
+                <span className="text-sm text-slate-600">
                   Intent: <span className="text-indigo-600 font-semibold capitalize">{latestIntent?.intent?.replace(/_/g, ' ') || 'General Question'}</span>
                 </span>
-                <span className="text-sm font-medium text-slate-600">
-                  Frustration: <span className={(latestIntent?.frustration_score || 0) > 60 ? 'text-red-600 font-bold' : 'text-slate-900'}>{latestIntent?.frustration_score || 0}/100</span>
+              </div>
+              <div className="flex items-center gap-4 text-sm text-slate-600">
+                <span>
+                  Frustration: <span className={(latestIntent?.frustration_score || 0) > 60 ? 'text-red-600 font-bold' : 'text-slate-900 font-semibold'}>{latestIntent?.frustration_score || 0}/100</span>
                 </span>
-                <span className="text-sm font-medium text-slate-600 flex items-center gap-1 capitalize">
-                  {TREND_ICONS[latestIntent?.satisfaction_trend || 'stable']} {latestIntent?.satisfaction_trend || 'stable'}
+                <span className="flex items-center gap-1">
+                  {TREND_ICONS[latestIntent?.satisfaction_trend || 'stable']} <span className="capitalize font-medium">{latestIntent?.satisfaction_trend || 'stable'}</span>
                 </span>
               </div>
-            )}
+            </div>
+          )}
 
-            {/* Conversation Panel */}
-            <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
-              <div className="border-b border-gray-100 px-6 py-4 flex items-center justify-between">
-                <div>
-                  <h2 className="font-bold text-gray-900">Conversation</h2>
-                  <p className="text-xs text-gray-500 mt-0.5">
-                    Turn {messages.filter(m => m.role !== 'system').length}
-                  </p>
-                </div>
-                <div className="flex items-center gap-2">
-                  {isStreaming && (
-                    <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 border border-emerald-200 px-3 py-1 text-xs font-semibold text-emerald-700">
-                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                      Streaming
-                    </span>
-                  )}
-                  <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
-                    {session.mode}
+          {/* ── Chat Card ── */}
+          <div className="shrink-0 bg-white border border-gray-200 rounded-2xl shadow-sm flex flex-col overflow-hidden">
+            {/* Chat Header */}
+            <div className="shrink-0 border-b border-gray-100 px-5 py-3.5 flex items-center justify-between bg-gray-50/40">
+              <div>
+                <h2 className="font-bold text-gray-900 text-sm">Active Conversation</h2>
+                <p className="text-[11px] text-gray-500 mt-0.5">
+                  Turn {messages.filter(m => m.role !== 'system').length} • Thread ID: {session.threadId.slice(0, 8)}...
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                {isStreaming && (
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 border border-emerald-200 px-2.5 py-1 text-[11px] font-semibold text-emerald-700">
+                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                    Streaming
                   </span>
-                </div>
+                )}
+                <span className="rounded-full bg-slate-100 border border-slate-200 px-2.5 py-1 text-[11px] font-semibold text-slate-600">
+                  {session.mode}
+                </span>
               </div>
+            </div>
 
-              {/* Messages */}
-              <div className="h-[400px] overflow-y-auto p-6 space-y-4">
-                {messages.map((msg, idx) => (
-                  <div key={idx} className={`flex ${msg.role === 'customer' ? 'justify-start' : msg.role === 'agent' ? 'justify-end' : 'justify-center'}`}>
-                    <div className={`max-w-[80%] rounded-2xl p-4 ${
-                      msg.role === 'customer'
-                        ? 'bg-slate-50 border border-slate-200'
-                        : msg.role === 'agent'
-                        ? 'bg-emerald-50 border border-emerald-200'
-                        : 'bg-amber-50 border border-amber-200'
-                    }`}>
-                      <div className="flex items-center gap-2 mb-1.5">
-                        <span className={`text-xs font-bold uppercase tracking-wider ${
-                          msg.role === 'customer' ? 'text-slate-500' : msg.role === 'agent' ? 'text-emerald-600' : 'text-amber-600'
+            {/* Scrollable Messages */}
+            <div className="h-[400px] overflow-y-auto px-5 py-4 space-y-3.5 bg-slate-50/20">
+              {messages.length === 0 && !streamingMessage && (
+                <div className="flex items-center justify-center h-full">
+                  <div className="text-center">
+                    <div className="text-4xl mb-3">💬</div>
+                    <p className="text-sm font-medium text-slate-500">No messages yet</p>
+                    <p className="text-xs text-slate-400 mt-1">Type a response below to start the conversation.</p>
+                  </div>
+                </div>
+              )}
+
+              {messages.map((msg, idx) => (
+                <div key={idx} className={`flex ${msg.role === 'customer' ? 'justify-start' : msg.role === 'agent' ? 'justify-end' : 'justify-center'}`}>
+                  <div className={`max-w-[85%] rounded-2xl p-3.5 shadow-sm ${
+                    msg.role === 'customer'
+                      ? 'bg-white border border-slate-200 text-slate-900'
+                      : msg.role === 'agent'
+                      ? 'bg-emerald-600 text-white'
+                      : 'bg-amber-50 border border-amber-200 text-amber-900'
+                  }`}>
+                    <div className="flex items-center justify-between gap-2 mb-1">
+                      <span className={`text-[10px] font-bold uppercase tracking-wider ${
+                        msg.role === 'customer' ? 'text-slate-500' : msg.role === 'agent' ? 'text-emerald-100' : 'text-amber-600'
+                      }`}>
+                        {msg.role === 'customer' ? 'Customer' : msg.role === 'agent' ? 'You (Agent)' : 'System'}
+                      </span>
+                      {msg.frustrationLevel !== undefined && msg.frustrationLevel !== null && (
+                        <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
+                          msg.frustrationLevel > 60 ? 'bg-red-100 text-red-800' :
+                          msg.frustrationLevel > 35 ? 'bg-amber-100 text-amber-800' :
+                          'bg-emerald-100 text-emerald-800'
                         }`}>
-                          {msg.role === 'customer' ? 'Customer' : msg.role === 'agent' ? 'You (Agent)' : 'System'}
+                          😤 {msg.frustrationLevel}
                         </span>
-                        {msg.frustrationLevel !== undefined && msg.frustrationLevel !== null && (
-                          <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${
-                            msg.frustrationLevel > 60 ? 'bg-red-50 text-red-700' :
-                            msg.frustrationLevel > 35 ? 'bg-amber-50 text-amber-700' :
-                            'bg-emerald-50 text-emerald-700'
-                          }`}>
-                            😤 {msg.frustrationLevel}
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-sm text-gray-900 leading-relaxed">{msg.content}</p>
-
-                      {/* Intent/Sentiment badge on message */}
-                      {msg.intentSentiment && (
-                        <div className="mt-2 pt-2 border-t border-slate-200 flex items-center gap-2 flex-wrap">
-                          <span className="text-[10px] font-semibold text-slate-500 capitalize">
-                            🎯 {msg.intentSentiment?.intent?.replace(/_/g, ' ') || 'General Question'}
-                          </span>
-                          <span className="text-[10px] font-semibold text-slate-500 capitalize">
-                            😶 {msg.intentSentiment?.emotion || 'Neutral'} ({msg.intentSentiment?.frustration_score || 0})
-                          </span>
-                          <span className="text-[10px] font-semibold text-slate-500 capitalize">
-                            {TREND_ICONS[msg.intentSentiment?.satisfaction_trend || 'stable']} {msg.intentSentiment?.satisfaction_trend || 'Stable'}
-                          </span>
-                        </div>
                       )}
                     </div>
-                  </div>
-                ))}
+                    <p className={`text-sm leading-relaxed ${msg.role === 'agent' ? 'text-white' : 'text-gray-900'}`}>
+                      {msg.content}
+                    </p>
 
-                {/* Streaming message */}
-                {streamingMessage && (
-                  <div className="flex justify-start">
-                    <div className="max-w-[80%] rounded-2xl bg-emerald-50/50 border border-emerald-200/70 p-4">
-                      <div className="flex items-center gap-2 mb-1.5">
-                        <span className="text-xs font-bold uppercase tracking-wider text-emerald-600">Customer</span>
-                        <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                    {msg.intentSentiment && (
+                      <div className={`mt-2 pt-2 border-t flex items-center gap-2.5 flex-wrap text-[11px] ${msg.role === 'agent' ? 'border-emerald-500/50 text-emerald-100' : 'border-slate-100 text-slate-500'}`}>
+                        <span className="capitalize font-medium">
+                          🎯 {msg.intentSentiment?.intent?.replace(/_/g, ' ') || 'General Question'}
+                        </span>
+                        <span className="capitalize font-medium">
+                          😶 {msg.intentSentiment?.emotion || 'Neutral'} ({msg.intentSentiment?.frustration_score || 0})
+                        </span>
+                        <span className="capitalize font-medium">
+                          {TREND_ICONS[msg.intentSentiment?.satisfaction_trend || 'stable']} {msg.intentSentiment?.satisfaction_trend || 'Stable'}
+                        </span>
                       </div>
-                      <p className="text-sm text-gray-900 leading-relaxed">
-                        {streamingMessage}
-                        <span className="inline-block w-1.5 h-4 bg-emerald-500 ml-0.5 animate-pulse" />
-                      </p>
-                    </div>
-                  </div>
-                )}
-
-                <div ref={messagesEndRef} />
-              </div>
-
-              {/* Agent Input */}
-              <div className="border-t border-gray-100 p-4">
-                <form onSubmit={handleSendMessage} className="flex gap-3">
-                  <input
-                    type="text"
-                    value={agentInput}
-                    onChange={(e) => setAgentInput(e.target.value)}
-                    placeholder="Type your response as the support agent..."
-                    className="flex-1 rounded-xl border border-gray-300 px-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
-                    disabled={sending || isStreaming}
-                  />
-                  <button
-                    type="submit"
-                    disabled={!agentInput.trim() || sending || isStreaming}
-                    className="inline-flex items-center justify-center rounded-xl bg-emerald-600 px-6 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-                  >
-                    {sending ? (
-                      <svg className="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                      </svg>
-                    ) : (
-                      <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-                      </svg>
                     )}
-                  </button>
-                </form>
-              </div>
+                  </div>
+                </div>
+              ))}
+
+              {streamingMessage && (
+                <div className="flex justify-start">
+                  <div className="max-w-[85%] rounded-2xl bg-white border border-emerald-200 p-3.5 shadow-sm">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-600">Customer (Typing)</span>
+                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                    </div>
+                    <p className="text-sm text-gray-900 leading-relaxed">
+                      {streamingMessage}
+                      <span className="inline-block w-1 h-4 bg-emerald-500 ml-0.5 animate-pulse align-middle" />
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              <div ref={messagesEndRef} />
+            </div>
+
+            {/* Agent Input Bar */}
+            <div className="shrink-0 border-t border-gray-200 px-4 py-3 bg-white">
+              <form onSubmit={handleSendMessage} className="flex gap-2.5">
+                <input
+                  type="text"
+                  value={agentInput}
+                  onChange={(e) => setAgentInput(e.target.value)}
+                  placeholder="Type your response as the support agent..."
+                  className="flex-1 rounded-xl border border-gray-300 px-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 bg-white shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+                  disabled={sending || isStreaming}
+                />
+                <button
+                  type="submit"
+                  disabled={!agentInput.trim() || sending || isStreaming}
+                  className="inline-flex items-center justify-center rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white shadow-md shadow-emerald-600/25 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                >
+                  {sending ? (
+                    <svg className="animate-spin h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    </svg>
+                  ) : (
+                    <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                    </svg>
+                  )}
+                </button>
+              </form>
             </div>
           </div>
 
-          {/* Right Panel: Knowledge & Analytics */}
-          <div className="space-y-4">
-            {/* Intent & Sentiment Detail */}
+          {/* ── Knowledge & Analytics Section (below chat) ── */}
+          <div className="shrink-0 grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Intent & Sentiment Card */}
             <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-5">
-              <h3 className="font-bold text-gray-900 text-sm mb-3">Intent & Sentiment</h3>
+              <h3 className="font-bold text-gray-900 text-sm border-b border-gray-100 pb-2.5 mb-3.5 flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
+                Intent & Sentiment
+              </h3>
               {latestIntent ? (
                 <div className="space-y-3">
-                  <div className="rounded-xl bg-slate-50 border border-slate-200 p-3">
+                  <div className="rounded-xl bg-slate-50 border border-slate-200/80 p-3">
                     <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Intent</div>
                     <div className="mt-1 text-sm font-semibold text-gray-900 capitalize">
                       {latestIntent?.intent?.replace(/_/g, ' ') || 'General Question'}
                     </div>
                   </div>
-                  <div className="rounded-xl bg-slate-50 border border-slate-200 p-3">
+                  <div className="rounded-xl bg-slate-50 border border-slate-200/80 p-3">
                     <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Emotion</div>
                     <div className="mt-1 flex items-center gap-2">
-                      <span className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-semibold capitalize ${
+                      <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-semibold capitalize ${
                         EMOTION_COLORS[latestIntent?.emotion || 'neutral'] || 'bg-slate-100 border-slate-300 text-slate-700'
                       }`}>
                         <span className="h-1.5 w-1.5 rounded-full bg-current" />
@@ -616,12 +620,12 @@ export default function LiveConsole() {
                       </span>
                     </div>
                   </div>
-                  <div className="rounded-xl bg-slate-50 border border-slate-200 p-3">
-                    <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Frustration Score</div>
+                  <div className="rounded-xl bg-slate-50 border border-slate-200/80 p-3">
+                    <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Frustration</div>
                     <div className="mt-2">
-                      <div className="flex items-center justify-between text-xs text-slate-600 mb-1">
+                      <div className="flex items-center justify-between text-[11px] text-slate-600 mb-1">
                         <span>0</span>
-                        <span className="font-semibold">{latestIntent?.frustration_score || 0}</span>
+                        <span className="font-bold text-slate-900">{latestIntent?.frustration_score || 0} / 100</span>
                         <span>100</span>
                       </div>
                       <div className="h-2 rounded-full bg-slate-200 overflow-hidden">
@@ -636,8 +640,8 @@ export default function LiveConsole() {
                       </div>
                     </div>
                   </div>
-                  <div className="rounded-xl bg-slate-50 border border-slate-200 p-3">
-                    <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Satisfaction Trend</div>
+                  <div className="rounded-xl bg-slate-50 border border-slate-200/80 p-3">
+                    <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Trend</div>
                     <div className="mt-1 flex items-center gap-2">
                       <span className="text-lg">{TREND_ICONS[latestIntent?.satisfaction_trend || 'stable'] || '➡️'}</span>
                       <span className="text-sm font-semibold text-gray-900 capitalize">{latestIntent?.satisfaction_trend || 'Stable'}</span>
@@ -645,73 +649,75 @@ export default function LiveConsole() {
                   </div>
                 </div>
               ) : (
-                <div className="rounded-xl bg-slate-50 border border-slate-200 p-4 text-center">
-                  <p className="text-xs text-slate-500">Waiting for first message...</p>
+                <div className="rounded-xl bg-slate-50 border border-slate-200 p-5 text-center">
+                  <p className="text-xs text-slate-500">Awaiting first turn...</p>
                 </div>
               )}
             </div>
 
-            {/* Knowledge Panel */}
-            <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-5">
-              <h3 className="font-bold text-gray-900 text-sm mb-3">Knowledge Base Results</h3>
+            {/* Knowledge Base Results Card */}
+            <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-5 flex flex-col">
+              <h3 className="shrink-0 font-bold text-gray-900 text-sm border-b border-gray-100 pb-2.5 mb-3.5 flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
+                Knowledge Base
+              </h3>
               {latestKnowledge ? (
                 latestKnowledge?.results?.length > 0 ? (
-                  <div className="space-y-3">
+                  <div className="space-y-2.5 overflow-y-auto max-h-[240px] pr-0.5">
                     {latestKnowledge.results.map((result, idx) => (
-                      <div key={idx} className="rounded-xl border border-indigo-100 bg-indigo-50/30 p-3">
-                        <div className="flex items-center justify-between gap-2 mb-1.5">
-                          <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-600">
+                      <div key={idx} className="rounded-xl border border-indigo-100 bg-indigo-50/40 p-3 transition-all hover:bg-indigo-50/70">
+                        <div className="flex items-center justify-between gap-2 mb-1">
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-700">
                             #{idx + 1}
                           </span>
-                          <span className="text-[10px] font-semibold text-indigo-500 bg-indigo-100 px-2 py-0.5 rounded-full">
-                            {((result?.relevance_score || 0) * 100).toFixed(0)}% match
+                          <span className="text-[10px] font-semibold text-indigo-700 bg-indigo-100/80 px-2 py-0.5 rounded-full">
+                            {((result?.relevance_score || 0) * 100).toFixed(0)}%
                           </span>
                         </div>
-                        <div className="text-xs text-gray-900 leading-relaxed line-clamp-3 mb-2">
+                        <p className="text-xs text-gray-900 leading-relaxed line-clamp-2 mb-1 font-medium">
                           {result?.chunk_text}
-                        </div>
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="text-[10px] text-gray-500 truncate">
-                            📄 {result?.source_document}
-                          </span>
+                        </p>
+                        <div className="text-[10px] text-gray-500 truncate">
+                          📄 {result?.source_document}
                         </div>
                         {result?.why_relevant && (
-                          <div className="mt-2 pt-2 border-t border-indigo-200/50">
-                            <div className="text-[10px] font-bold uppercase tracking-wider text-indigo-500 mb-0.5">
-                              Why relevant
-                            </div>
-                            <p className="text-xs text-gray-700 leading-relaxed">{result.why_relevant}</p>
+                          <div className="mt-1.5 pt-1.5 border-t border-indigo-200/60">
+                            <p className="text-[10px] text-gray-600 leading-relaxed">{result.why_relevant}</p>
                           </div>
                         )}
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <div className="rounded-xl bg-slate-50 border border-slate-200 p-4 text-center">
+                  <div className="rounded-xl bg-slate-50 border border-slate-200 p-5 text-center">
                     <p className="text-xs text-slate-500">
                       {latestKnowledge?.note === 'no relevant knowledge found'
-                        ? 'No relevant knowledge found for this query.'
-                        : 'No knowledge results available.'}
+                        ? 'No relevant knowledge found.'
+                        : 'No results available.'}
                     </p>
                   </div>
                 )
               ) : (
-                <div className="rounded-xl bg-slate-50 border border-slate-200 p-4 text-center">
+                <div className="rounded-xl bg-slate-50 border border-slate-200 p-5 text-center">
                   <p className="text-xs text-slate-500">Knowledge results appear here...</p>
                 </div>
               )}
             </div>
 
-            {/* Coaching Tips (placeholder) */}
+            {/* Coaching Tips Card */}
             <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-5">
-              <h3 className="font-bold text-gray-900 text-sm mb-3">Coaching Tips</h3>
-              <div className="rounded-xl bg-amber-50/50 border border-amber-200 p-4 text-center">
-                <p className="text-xs text-amber-700">
-                  ⏳ Coaching tips coming in Milestone 3.
+              <h3 className="font-bold text-gray-900 text-sm border-b border-gray-100 pb-2.5 mb-3.5 flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                Coaching Tips
+              </h3>
+              <div className="rounded-xl bg-amber-50/60 border border-amber-200 p-4 text-center">
+                <p className="text-xs text-amber-800 font-medium">
+                  ⏳ AI coaching recommendations coming in Milestone 3.
                 </p>
               </div>
             </div>
           </div>
+
         </div>
       )}
     </div>

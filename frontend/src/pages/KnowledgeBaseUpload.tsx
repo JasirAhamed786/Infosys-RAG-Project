@@ -280,7 +280,7 @@ export default function KnowledgeBaseUpload() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
               <div className="rounded-xl bg-white border border-emerald-200/80 p-3.5 shadow-sm">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-gray-400 block mb-1">Chroma Collection ID</span>
+                <span className="text-[11px] font-bold uppercase tracking-wider text-gray-400 block mb-1">Stored in Database</span>
                 <span className="text-sm font-mono text-gray-900 font-medium break-all">{success.chroma_collection_id}</span>
               </div>
               <div className="rounded-xl bg-white border border-emerald-200/80 p-3.5 shadow-sm">
