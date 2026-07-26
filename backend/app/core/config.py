@@ -22,8 +22,8 @@ class Settings(BaseSettings):
 
     # Groq models
     GROQ_SIMULATOR_MODEL: str = "llama-3.3-70b-versatile"
-    GROQ_INTENT_MODEL: str = "openai/gpt-oss-20b"
-
+    #GROQ_INTENT_MODEL: str = "llama-3.1-8b-instant"
+    GROQ_INTENT_MODEL: str = "llama-3.3-70b-versatile"
     # Gemini model
     GEMINI_KNOWLEDGE_MODEL: str = "gemini-2.0-flash-exp"
 

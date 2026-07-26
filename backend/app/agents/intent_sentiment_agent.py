@@ -71,8 +71,8 @@ Analyze this customer message and return STRICT JSON ONLY."""
 
     try:
         if groq_client.api_key:
-            # Hardcoded to Mixtral to bypass blocked Llama models and save Llama 70B rate limits
-            model = "mixtral-8x7b-32768"
+            # Use the configured intent model from settings
+            model = settings.GROQ_INTENT_MODEL
             
             result = groq_client.generate_json(
                 model=model,
@@ -151,7 +151,7 @@ def _heuristic_analysis(
     if any(word in msg_lower for word in ["unclear", "confus", "don't understand", "explain"]):
         emotion = "confused"
         frustration_score = 35
-    elif any(word in msg_lower for w in ["angry", "furious", "terrible", "worst", "unacceptable", "horrible", "ridiculous", "ignored", "unbelievable", "livid", "outraged"]):
+    elif any(w in msg_lower for w in ["angry", "furious", "terrible", "worst", "unacceptable", "horrible", "ridiculous", "ignored", "unbelievable", "livid", "outraged"]):
         emotion = "angry"
         frustration_score = 85
     elif any(word in msg_lower for word in ["frustrat", "annoy", "tired", "waiting", "sick of", "fed up"]):

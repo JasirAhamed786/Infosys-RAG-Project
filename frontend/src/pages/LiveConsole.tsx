@@ -103,7 +103,7 @@ export default function LiveConsole() {
     setError(null)
 
     try {
-      // Step 1: Create a session via the sessions API (Milestone 1)
+      // Step 1: Create a session via the sessions API
       const sessionPayload = {
         mode,
         product_context: productContext,
@@ -452,26 +452,22 @@ export default function LiveConsole() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Left Panel: Conversation */}
           <div className="lg:col-span-2 space-y-4">
-            {/* Analysis Bar */}
+            
+            {/* Analysis Bar (Repaired missing HTML) */}
             {latestIntent && (
-              <div className="glass rounded-2xl p-4 flex items-center gap-4 flex-wrap">
-                <span className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold ${
-                  EMOTION_COLORS[latestIntent.emotion] || 'bg-slate-100 border-slate-300 text-slate-700'
-                }`}>
+              <div className="flex flex-wrap items-center gap-4 rounded-full bg-white border border-gray-200 px-5 py-2.5 shadow-sm">
+                <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold border ${EMOTION_COLORS[latestIntent?.emotion || 'neutral'] || 'bg-slate-100 border-slate-300 text-slate-700'}`}>
                   <span className="h-1.5 w-1.5 rounded-full bg-current" />
-                  {latestIntent.emotion}
+                  {latestIntent?.emotion || 'neutral'}
                 </span>
-
-                <span className="rounded-full bg-blue-50 border border-blue-200 px-3 py-1 text-xs font-semibold text-blue-700">
-                  Intent: {latestIntent.intent}
+                <span className="text-sm font-medium text-slate-600">
+                  Intent: <span className="text-indigo-600 font-semibold capitalize">{latestIntent?.intent?.replace(/_/g, ' ') || 'General Question'}</span>
                 </span>
-
-                <span className="rounded-full bg-purple-50 border border-purple-200 px-3 py-1 text-xs font-semibold text-purple-700">
-                  Frustration: {latestIntent.frustration_score}/100
+                <span className="text-sm font-medium text-slate-600">
+                  Frustration: <span className={(latestIntent?.frustration_score || 0) > 60 ? 'text-red-600 font-bold' : 'text-slate-900'}>{latestIntent?.frustration_score || 0}/100</span>
                 </span>
-
-                <span className="text-xs font-mono font-semibold text-slate-500">
-                  {TREND_ICONS[latestIntent.satisfaction_trend] || '➡️'} {latestIntent.satisfaction_trend}
+                <span className="text-sm font-medium text-slate-600 flex items-center gap-1 capitalize">
+                  {TREND_ICONS[latestIntent?.satisfaction_trend || 'stable']} {latestIntent?.satisfaction_trend || 'stable'}
                 </span>
               </div>
             )}
@@ -530,14 +526,14 @@ export default function LiveConsole() {
                       {/* Intent/Sentiment badge on message */}
                       {msg.intentSentiment && (
                         <div className="mt-2 pt-2 border-t border-slate-200 flex items-center gap-2 flex-wrap">
-                          <span className="text-[10px] font-semibold text-slate-500">
-                            🎯 {msg.intentSentiment.intent}
+                          <span className="text-[10px] font-semibold text-slate-500 capitalize">
+                            🎯 {msg.intentSentiment?.intent?.replace(/_/g, ' ') || 'General Question'}
                           </span>
-                          <span className="text-[10px] font-semibold text-slate-500">
-                            😶 {msg.intentSentiment.emotion} ({msg.intentSentiment.frustration_score})
+                          <span className="text-[10px] font-semibold text-slate-500 capitalize">
+                            😶 {msg.intentSentiment?.emotion || 'Neutral'} ({msg.intentSentiment?.frustration_score || 0})
                           </span>
-                          <span className="text-[10px] font-semibold text-slate-500">
-                            {TREND_ICONS[msg.intentSentiment.satisfaction_trend]} {msg.intentSentiment.satisfaction_trend}
+                          <span className="text-[10px] font-semibold text-slate-500 capitalize">
+                            {TREND_ICONS[msg.intentSentiment?.satisfaction_trend || 'stable']} {msg.intentSentiment?.satisfaction_trend || 'Stable'}
                           </span>
                         </div>
                       )}
@@ -606,17 +602,17 @@ export default function LiveConsole() {
                   <div className="rounded-xl bg-slate-50 border border-slate-200 p-3">
                     <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Intent</div>
                     <div className="mt-1 text-sm font-semibold text-gray-900 capitalize">
-                      {latestIntent.intent.replace(/_/g, ' ')}
+                      {latestIntent?.intent?.replace(/_/g, ' ') || 'General Question'}
                     </div>
                   </div>
                   <div className="rounded-xl bg-slate-50 border border-slate-200 p-3">
                     <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Emotion</div>
                     <div className="mt-1 flex items-center gap-2">
-                      <span className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-semibold ${
-                        EMOTION_COLORS[latestIntent.emotion] || 'bg-slate-100 border-slate-300 text-slate-700'
+                      <span className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-semibold capitalize ${
+                        EMOTION_COLORS[latestIntent?.emotion || 'neutral'] || 'bg-slate-100 border-slate-300 text-slate-700'
                       }`}>
                         <span className="h-1.5 w-1.5 rounded-full bg-current" />
-                        {latestIntent.emotion}
+                        {latestIntent?.emotion || 'Neutral'}
                       </span>
                     </div>
                   </div>
@@ -625,17 +621,17 @@ export default function LiveConsole() {
                     <div className="mt-2">
                       <div className="flex items-center justify-between text-xs text-slate-600 mb-1">
                         <span>0</span>
-                        <span className="font-semibold">{latestIntent.frustration_score}</span>
+                        <span className="font-semibold">{latestIntent?.frustration_score || 0}</span>
                         <span>100</span>
                       </div>
                       <div className="h-2 rounded-full bg-slate-200 overflow-hidden">
                         <div
                           className={`h-full rounded-full transition-all duration-500 ${
-                            latestIntent.frustration_score > 60 ? 'bg-red-500' :
-                            latestIntent.frustration_score > 35 ? 'bg-amber-500' :
+                            (latestIntent?.frustration_score || 0) > 60 ? 'bg-red-500' :
+                            (latestIntent?.frustration_score || 0) > 35 ? 'bg-amber-500' :
                             'bg-emerald-500'
                           }`}
-                          style={{ width: `${latestIntent.frustration_score}%` }}
+                          style={{ width: `${latestIntent?.frustration_score || 0}%` }}
                         />
                       </div>
                     </div>
@@ -643,8 +639,8 @@ export default function LiveConsole() {
                   <div className="rounded-xl bg-slate-50 border border-slate-200 p-3">
                     <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Satisfaction Trend</div>
                     <div className="mt-1 flex items-center gap-2">
-                      <span className="text-lg">{TREND_ICONS[latestIntent.satisfaction_trend] || '➡️'}</span>
-                      <span className="text-sm font-semibold text-gray-900 capitalize">{latestIntent.satisfaction_trend}</span>
+                      <span className="text-lg">{TREND_ICONS[latestIntent?.satisfaction_trend || 'stable'] || '➡️'}</span>
+                      <span className="text-sm font-semibold text-gray-900 capitalize">{latestIntent?.satisfaction_trend || 'Stable'}</span>
                     </div>
                   </div>
                 </div>
@@ -659,7 +655,7 @@ export default function LiveConsole() {
             <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-5">
               <h3 className="font-bold text-gray-900 text-sm mb-3">Knowledge Base Results</h3>
               {latestKnowledge ? (
-                latestKnowledge.results && latestKnowledge.results.length > 0 ? (
+                latestKnowledge?.results?.length > 0 ? (
                   <div className="space-y-3">
                     {latestKnowledge.results.map((result, idx) => (
                       <div key={idx} className="rounded-xl border border-indigo-100 bg-indigo-50/30 p-3">
@@ -668,18 +664,18 @@ export default function LiveConsole() {
                             #{idx + 1}
                           </span>
                           <span className="text-[10px] font-semibold text-indigo-500 bg-indigo-100 px-2 py-0.5 rounded-full">
-                            {(result.relevance_score * 100).toFixed(0)}% match
+                            {((result?.relevance_score || 0) * 100).toFixed(0)}% match
                           </span>
                         </div>
                         <div className="text-xs text-gray-900 leading-relaxed line-clamp-3 mb-2">
-                          {result.chunk_text}
+                          {result?.chunk_text}
                         </div>
                         <div className="flex items-center justify-between gap-2">
                           <span className="text-[10px] text-gray-500 truncate">
-                            📄 {result.source_document}
+                            📄 {result?.source_document}
                           </span>
                         </div>
-                        {result.why_relevant && (
+                        {result?.why_relevant && (
                           <div className="mt-2 pt-2 border-t border-indigo-200/50">
                             <div className="text-[10px] font-bold uppercase tracking-wider text-indigo-500 mb-0.5">
                               Why relevant
@@ -693,7 +689,7 @@ export default function LiveConsole() {
                 ) : (
                   <div className="rounded-xl bg-slate-50 border border-slate-200 p-4 text-center">
                     <p className="text-xs text-slate-500">
-                      {latestKnowledge.note === 'no relevant knowledge found'
+                      {latestKnowledge?.note === 'no relevant knowledge found'
                         ? 'No relevant knowledge found for this query.'
                         : 'No knowledge results available.'}
                     </p>
@@ -721,4 +717,3 @@ export default function LiveConsole() {
     </div>
   )
 }
-
