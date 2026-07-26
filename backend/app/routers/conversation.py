@@ -59,18 +59,27 @@ def conversation_turn(req: ConversationTurnRequest):
         raise HTTPException(status_code=400, detail="user_message must not be empty")
 
     now = dt.datetime.utcnow()
-    agent_msg_id = str(uuid4())
 
-    # Persist agent message
-    agent_doc = {
-        "_id": agent_msg_id,
+    # ── Idempotency check: skip agent insert if this (session, turn, role) already exists ──
+    existing_agent = mongo.messages.find_one({
         "session_id": req.session_id,
         "turn_index": req.turn_index,
         "role": "agent",
-        "content": req.user_message,
-        "created_at": now,
-    }
-    mongo.messages.insert_one(agent_doc)
+    })
+    if existing_agent:
+        agent_msg_id = existing_agent["_id"]
+        print(f"[conversation] Agent message already exists for turn {req.turn_index}, skipping insert")
+    else:
+        agent_msg_id = str(uuid4())
+        agent_doc = {
+            "_id": agent_msg_id,
+            "session_id": req.session_id,
+            "turn_index": req.turn_index,
+            "role": "agent",
+            "content": req.user_message,
+            "created_at": now,
+        }
+        mongo.messages.insert_one(agent_doc)
 
     # Get conversation history for context
     conversation_history = list(
@@ -90,21 +99,30 @@ def conversation_turn(req: ConversationTurnRequest):
         turn_index=req.turn_index,
     )
 
-    # Persist customer simulation message (if simulator mode)
+    # Persist customer simulation message (if simulator mode) — with idempotency
     customer_msg = out.get("customer_simulation", {}).get("customer_message")
     if customer_msg:
-        customer_doc = {
-            "_id": str(uuid4()),
+        customer_turn_index = out.get("customer_simulation", {}).get("turn_index", req.turn_index + 1)
+        existing_customer = mongo.messages.find_one({
             "session_id": req.session_id,
-            "turn_index": out.get("customer_simulation", {}).get("turn_index", req.turn_index + 1),
+            "turn_index": customer_turn_index,
             "role": "customer",
-            "content": customer_msg,
-            "created_at": now,
-            "intent_sentiment_result": out.get("intent_sentiment"),
-            "knowledge_result": out.get("knowledge"),
-            "frustration_level": out.get("customer_simulation", {}).get("internal_frustration_level"),
-        }
-        mongo.messages.insert_one(customer_doc)
+        })
+        if existing_customer:
+            print(f"[conversation] Customer message already exists for turn {customer_turn_index}, skipping insert")
+        else:
+            customer_doc = {
+                "_id": str(uuid4()),
+                "session_id": req.session_id,
+                "turn_index": customer_turn_index,
+                "role": "customer",
+                "content": customer_msg,
+                "created_at": now,
+                "intent_sentiment_result": out.get("intent_sentiment"),
+                "knowledge_result": out.get("knowledge"),
+                "frustration_level": out.get("customer_simulation", {}).get("internal_frustration_level"),
+            }
+            mongo.messages.insert_one(customer_doc)
 
     # Also attach intent/sentiment to the agent message
     mongo.messages.update_one(
@@ -115,4 +133,3 @@ def conversation_turn(req: ConversationTurnRequest):
     )
 
     return ConversationTurnResponse(**out)
-
