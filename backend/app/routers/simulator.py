@@ -12,14 +12,13 @@ Connects the frontend Live Console to the real orchestration pipeline:
 from __future__ import annotations
 
 import datetime as dt
-from typing import Any, AsyncGenerator, Literal
+from typing import Any, Literal
 from uuid import uuid4
 
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
-from app.agents.simulator_agent import run_simulator_agent
 from app.core.config import settings
 from app.orchestration.pipeline import run_pipeline
 from app.services.mongo import mongo
@@ -77,12 +76,10 @@ def start_simulator(req: SimulatorStartRequest):
     thread_id = str(uuid4())
 
     # Run the pipeline to get the first customer message
-    # Note: input_message is empty — the pipeline handles this by skipping
-    # intent/knowledge stages and only running the simulator
     pipeline_result = run_pipeline(
         session_id=req.session_id,
         mode=req.mode,
-        input_message="",  # No agent message yet — this is the first turn
+        input_message="",
         product_context=req.product_context,
         scenario=req.scenario,
         persona=req.persona,
@@ -128,11 +125,33 @@ def simulator_message(req: SimulatorTurnRequest):
     """Process an agent message and return the simulated customer response.
 
     Runs the full pipeline: Intent/Sentiment → Knowledge → Simulator.
+    Persists both the agent message and the simulated customer response to MongoDB.
     """
     mongo.connect()
 
     if not req.user_message.strip():
         raise HTTPException(status_code=400, detail="user_message must not be empty")
+
+    now = dt.datetime.utcnow()
+
+    # ── Persist agent message (with idempotency check) ──
+    existing_agent = mongo.messages.find_one({
+        "session_id": req.session_id,
+        "turn_index": req.turn_index,
+        "role": "agent",
+    })
+    if existing_agent:
+        print(f"[simulator] Agent message already exists for turn {req.turn_index}, skipping insert")
+    else:
+        agent_doc = {
+            "_id": str(uuid4()),
+            "session_id": req.session_id,
+            "turn_index": req.turn_index,
+            "role": "agent",
+            "content": req.user_message,
+            "created_at": now,
+        }
+        mongo.messages.insert_one(agent_doc)
 
     # Get conversation history for pipeline context
     conversation_history = list(
@@ -161,11 +180,36 @@ def simulator_message(req: SimulatorTurnRequest):
     intent_sent = pipeline_result.get("intent_sentiment", {})
     knowledge = pipeline_result.get("knowledge", {})
 
+    # ── Persist customer response (with idempotency check) ──
+    customer_msg = customer_sim.get("customer_message", "")
+    if customer_msg:
+        customer_turn_index = customer_sim.get("turn_index", req.turn_index + 1)
+        existing_customer = mongo.messages.find_one({
+            "session_id": req.session_id,
+            "turn_index": customer_turn_index,
+            "role": "customer",
+        })
+        if existing_customer:
+            print(f"[simulator] Customer message already exists for turn {customer_turn_index}, skipping insert")
+        else:
+            customer_doc = {
+                "_id": str(uuid4()),
+                "session_id": req.session_id,
+                "turn_index": customer_turn_index,
+                "role": "customer",
+                "content": customer_msg,
+                "created_at": now,
+                "intent_sentiment_result": intent_sent,
+                "knowledge_result": knowledge,
+                "frustration_level": customer_sim.get("internal_frustration_level"),
+            }
+            mongo.messages.insert_one(customer_doc)
+
     return {
         "session_id": req.session_id,
         "thread_id": req.thread_id,
         "turn_index": customer_sim.get("turn_index", req.turn_index + 1),
-        "customer_message": customer_sim.get("customer_message", ""),
+        "customer_message": customer_msg,
         "metadata": customer_sim.get("metadata", {"tone": "neutral"}),
         "intent_sentiment": intent_sent,
         "knowledge": knowledge,
@@ -259,4 +303,3 @@ async def stream_simulator_message(
             "X-Accel-Buffering": "no",
         },
     )
-
