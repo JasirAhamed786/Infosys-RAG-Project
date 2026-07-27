@@ -151,8 +151,27 @@ async function apiPost<T>(endpoint: string, body: unknown): Promise<T> {
   return (await res.json()) as T
 }
 
+export interface SessionDetailResponse {
+  session_id: string
+  mode: CreateSessionModeBackend
+  product_context: string
+  scenario: string
+  persona: string | null
+  created_at: string
+  status: string
+}
+
 export async function createSession(data: CreateSessionRequest): Promise<CreateSessionResponse> {
   return apiPost<CreateSessionResponse>('/api/sessions/', data)
+}
+
+export async function getSession(sessionId: string): Promise<SessionDetailResponse> {
+  const res = await fetch(`${API_BASE}/api/sessions/${sessionId}`)
+  if (!res.ok) {
+    const errBody = await parseErrorBody(res)
+    throw new Error(`Failed to fetch session: ${errBody}`)
+  }
+  return res.json()
 }
 
 export async function uploadKnowledgeBase(file: File): Promise<UploadKnowledgeResponse> {

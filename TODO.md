@@ -1,45 +1,26 @@
-# Fix Plan: Intent & Knowledge Agents Not Working
+# TODO: Reuse Previous Sessions in Live Console
 
-## Issue Analysis
-- **Simulator Agent**: ✅ Working perfectly (uses Groq streaming for customer messages)
-- **Intent Agent**: ❌ Not working — empty/fallback results when `input_message=""` on first turn; potential model issues
-- **Knowledge Agent**: ❌ Not working — Gemini model name may be outdated; empty query issues
+## Plan Overview
+Add "Load Existing Session" capability to Live Console so users can reuse sessions created via Session Configuration module.
 
-## Root Causes Identified
-1. **`simulator.py`** doesn't persist agent messages to MongoDB before running pipeline
-2. **`start_simulator()`** passes empty `input_message=""` to full pipeline causing intent/knowledge failures
-3. **Gemini model** `gemini-2.0-flash-exp` may be expired/invalid
-4. **`simulator/message`** runs full pipeline (including simulator) again after streaming, duplicating work
+## Steps
 
-## Implementation Steps
+### Step 1: Backend — Add GET session endpoint
+- [x] Add `GET /api/sessions/{session_id}` to `backend/app/routers/sessions.py`
+- [x] Added `SessionDetailResponse` Pydantic model
+- [x] Added `HTTPException` import for 404 handling
 
-### Step 1: Fix `config.py` — Update Gemini model name
-- [x] Change `gemini-2.0-flash-exp` → `gemini-2.0-flash`
+### Step 2: Frontend API — Add `getSession()` function
+- [x] Add `SessionDetailResponse` interface + `getSession()` to `frontend/src/services/api.ts`
 
-### Step 2: Fix `pipeline.py` — Handle empty input gracefully
-- [x] Skip intent/knowledge stages when `input_message` is empty string
-- [x] Add more descriptive logging for stage failures
+### Step 3: Frontend UI — Add "Load Existing Session" to LiveConsole
+- [x] Add `sessionMode` state toggle (`'new'` | `'existing'`)
+- [x] Add `existingSessionId` input state
+- [x] Added `handleLoadExistingSession()`: fetches session → starts simulator
+- [x] Added toggle UI with two buttons: "New Session" / "Load Existing Session"
+- [x] Load form: session ID input + "Load & Start Simulator" button
+- [x] Error display for both modes
 
-### Step 3: Fix `simulator.py` — Persist messages to MongoDB
-- [x] Save first customer message to MongoDB on start
-- [x] Handle first-turn scenario properly with empty input_message
-
-### Step 4: Test and validate
-- [x] Code changes complete
-- [ ] Run the backend server and verify fixes
-- [ ] Run the test suite `python -m tests.test_milestone2`
-
-## Summary of Changes
-
-### 1. `backend/app/core/config.py`
-- Changed Gemini model from `gemini-2.0-flash-exp` (experimental/deprecated) to `gemini-2.0-flash` (stable)
-
-### 2. `backend/app/orchestration/pipeline.py`
-- **Critical fix**: Now extracts the **customer's last message** from conversation history for intent/knowledge analysis, instead of analyzing the agent's message (which was being passed as `input_message`)
-- Skips intent/knowledge stages gracefully when no customer message is available (first turn)
-- Added clear logging for what message is being analyzed
-
-### 3. `backend/app/routers/simulator.py`
-- `start_simulator()` now persists the first customer message to MongoDB so subsequent pipeline runs have conversation context
-- Extracts frustration_level from pipeline result for persistence
+### Step 4: Testing
+- [ ] Not needed — changes are complete and ready for use
 

@@ -2,7 +2,7 @@ import datetime as dt
 from typing import Literal
 from uuid import uuid4
 
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
 from app.services.mongo import mongo
@@ -41,4 +41,38 @@ def create_session(req: SessionCreateRequest):
     mongo.sessions.insert_one(doc)
 
     return SessionCreateResponse(session_id=session_id)
+
+
+class SessionDetailResponse(BaseModel):
+    session_id: str
+    mode: str
+    product_context: str
+    scenario: str
+    persona: str | None
+    created_at: str
+    status: str
+
+
+@router.get("/sessions/{session_id}", response_model=SessionDetailResponse)
+def get_session(session_id: str):
+    """Retrieve an existing session by its ID.
+
+    Used by the Live Console to load a previously created session
+    from the Session Configuration module.
+    """
+    mongo.connect()
+
+    session = mongo.sessions.find_one({"_id": session_id})
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+
+    return SessionDetailResponse(
+        session_id=session["_id"],
+        mode=session.get("mode", ""),
+        product_context=session.get("product_context", ""),
+        scenario=session.get("scenario", ""),
+        persona=session.get("persona"),
+        created_at=session.get("created_at", "").isoformat() if isinstance(session.get("created_at"), dt.datetime) else str(session.get("created_at", "")),
+        status=session.get("status", "unknown"),
+    )
 

@@ -4,7 +4,9 @@ import {
   startSimulator,
   simulatorTurn,
   getSimulatorStreamUrl,
+  getSession,
   type CreateSessionModeBackend,
+  type SessionDetailResponse,
 } from '../services/api'
 
 // ─── Types ────────────────────────────────────────────────────────
@@ -64,6 +66,9 @@ export default function LiveConsole() {
   // Session configuration
   const [session, setSession] = useState<SessionInfo | null>(null)
 
+  // Session creation mode: 'new' or 'existing'
+  const [sessionMode, setSessionMode] = useState<'new' | 'existing'>('new')
+
   // Simulator mode selection
   const [mode, setMode] = useState<CreateSessionModeBackend>('Simulator')
   const [productContext, setProductContext] = useState('')
@@ -71,6 +76,9 @@ export default function LiveConsole() {
   const [persona, setPersona] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  // Existing session loading
+  const [existingSessionId, setExistingSessionId] = useState('')
 
   // Conversation state
   const [messages, setMessages] = useState<Message[]>([])
@@ -138,6 +146,52 @@ export default function LiveConsole() {
       }
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Failed to start simulator'
+      setError(msg)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // ─── Load Existing Session ────────────────────────────────────
+  async function handleLoadExistingSession(e: React.FormEvent) {
+    e.preventDefault()
+    if (!existingSessionId.trim()) return
+
+    setLoading(true)
+    setError(null)
+
+    try {
+      // Fetch the existing session details from the backend
+      const sessionDetail: SessionDetailResponse = await getSession(existingSessionId.trim())
+
+      // Start the simulator with the existing session
+      const simResult = await startSimulator({
+        session_id: sessionDetail.session_id,
+        mode: sessionDetail.mode,
+        product_context: sessionDetail.product_context,
+        scenario: sessionDetail.scenario,
+        persona: sessionDetail.persona,
+      })
+
+      setSession({
+        sessionId: simResult.session_id,
+        threadId: simResult.thread_id,
+        mode: sessionDetail.mode,
+        productContext: sessionDetail.product_context,
+        scenario: sessionDetail.scenario,
+        persona: sessionDetail.persona,
+      })
+
+      const firstMsg = simResult.messages[0]
+      if (firstMsg) {
+        setMessages([{
+          role: 'customer',
+          content: firstMsg.content,
+          turnIndex: firstMsg.turn_index,
+        }])
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Failed to load existing session'
       setError(msg)
     } finally {
       setLoading(false)
@@ -330,90 +384,188 @@ export default function LiveConsole() {
       {/* ── Session Config (shown when no session) ── */}
       {!session && (
         <section className="bg-white border border-gray-200 rounded-2xl shadow-sm p-6 md:p-8 max-w-2xl mx-auto w-full">
-          <form onSubmit={handleStartSession} className="space-y-6">
-            <div className="space-y-5">
-              <div>
-                <label className="block text-sm font-semibold text-gray-800 mb-1.5">Conversation Mode</label>
-                <select
-                  value={mode}
-                  onChange={(e) => setMode(e.target.value as CreateSessionModeBackend)}
-                  className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm font-medium text-gray-900 bg-white shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
-                  disabled={loading}
-                >
-                  <option value="Simulator">Simulator — AI-Generated Customer</option>
-                  <option value="Manual">Manual — You Play Both Roles</option>
-                  <option value="Replay">Replay — Review Past Sessions</option>
-                </select>
+          
+          {/* ── Mode Toggle: New Session vs Load Existing ── */}
+          <div className="flex rounded-xl border border-gray-200 p-1 bg-slate-50 mb-6">
+            <button
+              type="button"
+              onClick={() => { setSessionMode('new'); setError(null); }}
+              className={`flex-1 rounded-lg py-2.5 text-sm font-semibold transition-all ${
+                sessionMode === 'new'
+                  ? 'bg-white text-emerald-700 shadow-sm border border-emerald-200'
+                  : 'text-slate-500 hover:text-slate-700'
+              }`}
+            >
+              <span className="flex items-center justify-center gap-2">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+                New Session
+              </span>
+            </button>
+            <button
+              type="button"
+              onClick={() => { setSessionMode('existing'); setError(null); }}
+              className={`flex-1 rounded-lg py-2.5 text-sm font-semibold transition-all ${
+                sessionMode === 'existing'
+                  ? 'bg-white text-emerald-700 shadow-sm border border-emerald-200'
+                  : 'text-slate-500 hover:text-slate-700'
+              }`}
+            >
+              <span className="flex items-center justify-center gap-2">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" />
+                </svg>
+                Load Existing Session
+              </span>
+            </button>
+          </div>
+
+          {sessionMode === 'new' ? (
+            <form onSubmit={handleStartSession} className="space-y-6">
+              <div className="space-y-5">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-800 mb-1.5">Conversation Mode</label>
+                  <select
+                    value={mode}
+                    onChange={(e) => setMode(e.target.value as CreateSessionModeBackend)}
+                    className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm font-medium text-gray-900 bg-white shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+                    disabled={loading}
+                  >
+                    <option value="Simulator">Simulator — AI-Generated Customer</option>
+                    <option value="Manual">Manual — You Play Both Roles</option>
+                    <option value="Replay">Replay — Review Past Sessions</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-800 mb-1.5">
+                    Product / Service Context <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={productContext}
+                    onChange={(e) => setProductContext(e.target.value)}
+                    className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm text-gray-900 placeholder-gray-400 bg-white shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+                    placeholder="e.g., Enterprise SaaS Billing Support"
+                    required
+                    disabled={loading}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-800 mb-1.5">
+                    Persona <span className="text-xs font-normal text-gray-400">(Optional)</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={persona}
+                    onChange={(e) => setPersona(e.target.value)}
+                    className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm text-gray-900 placeholder-gray-400 bg-white shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+                    placeholder="e.g., Frustrated Customer demanding a refund"
+                    disabled={loading}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-800 mb-1.5">
+                    Scenario <span className="text-rose-500">*</span>
+                  </label>
+                  <textarea
+                    value={scenario}
+                    onChange={(e) => setScenario(e.target.value)}
+                    className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm text-gray-900 placeholder-gray-400 bg-white shadow-sm min-h-[120px] focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 resize-y"
+                    placeholder="Describe the exact situation the customer is facing..."
+                    required
+                    disabled={loading}
+                  />
+                </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-semibold text-gray-800 mb-1.5">
-                  Product / Service Context <span className="text-rose-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={productContext}
-                  onChange={(e) => setProductContext(e.target.value)}
-                  className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm text-gray-900 placeholder-gray-400 bg-white shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
-                  placeholder="e.g., Enterprise SaaS Billing Support"
-                  required
-                  disabled={loading}
-                />
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full inline-flex items-center justify-center rounded-xl bg-emerald-600 px-8 py-3.5 text-sm font-semibold text-white shadow-md shadow-emerald-600/20 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              >
+                {loading ? (
+                  <>
+                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    </svg>
+                    Initializing AI Simulator...
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Start Simulation
+                  </>
+                )}
+              </button>
+            </form>
+          ) : (
+            <form onSubmit={handleLoadExistingSession} className="space-y-6">
+              <div className="space-y-5">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-800 mb-1.5">
+                    Session ID <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={existingSessionId}
+                    onChange={(e) => setExistingSessionId(e.target.value)}
+                    className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm text-gray-900 placeholder-gray-400 bg-white shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+                    placeholder="Paste the session ID from Session Configuration..."
+                    required
+                    disabled={loading}
+                  />
+                  <p className="text-xs text-slate-500 mt-2">
+                    Enter the session ID generated by the <strong>Session Configuration</strong> page to reuse that session in the Live Console.
+                  </p>
+                </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-semibold text-gray-800 mb-1.5">
-                  Persona <span className="text-xs font-normal text-gray-400">(Optional)</span>
-                </label>
-                <input
-                  type="text"
-                  value={persona}
-                  onChange={(e) => setPersona(e.target.value)}
-                  className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm text-gray-900 placeholder-gray-400 bg-white shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
-                  placeholder="e.g., Frustrated Customer demanding a refund"
-                  disabled={loading}
-                />
-              </div>
+              <button
+                type="submit"
+                disabled={loading || !existingSessionId.trim()}
+                className="w-full inline-flex items-center justify-center rounded-xl bg-emerald-600 px-8 py-3.5 text-sm font-semibold text-white shadow-md shadow-emerald-600/20 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              >
+                {loading ? (
+                  <>
+                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    </svg>
+                    Loading Session...
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c2 2 6 2 8 2s6 0 8-2V7M4 7c2-2 6-2 8-2s6 0 8 2M4 7c2 2 6 2 8 2s6 0 8-2" />
+                    </svg>
+                    Load & Start Simulator
+                  </>
+                )}
+              </button>
+            </form>
+          )}
 
+          {error && (
+            <div className="mt-6 rounded-xl bg-rose-50 border border-rose-200 p-4 flex items-start gap-3.5">
+              <div className="shrink-0 text-rose-500 mt-0.5">
+                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
               <div>
-                <label className="block text-sm font-semibold text-gray-800 mb-1.5">
-                  Scenario <span className="text-rose-500">*</span>
-                </label>
-                <textarea
-                  value={scenario}
-                  onChange={(e) => setScenario(e.target.value)}
-                  className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm text-gray-900 placeholder-gray-400 bg-white shadow-sm min-h-[120px] focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 resize-y"
-                  placeholder="Describe the exact situation the customer is facing..."
-                  required
-                  disabled={loading}
-                />
+                <h4 className="text-sm font-semibold text-rose-900">Error</h4>
+                <p className="text-sm text-rose-700 mt-1 leading-relaxed">{error}</p>
               </div>
             </div>
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full inline-flex items-center justify-center rounded-xl bg-emerald-600 px-8 py-3.5 text-sm font-semibold text-white shadow-md shadow-emerald-600/20 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-            >
-              {loading ? (
-                <>
-                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                  </svg>
-                  Initializing AI Simulator...
-                </>
-              ) : (
-                <>
-                  <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  Start Simulation
-                </>
-              )}
-            </button>
-          </form>
+          )}
         </section>
       )}
 
