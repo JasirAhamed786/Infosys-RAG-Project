@@ -2,8 +2,6 @@
 simulator.py
 
 Milestone 2 — Customer Simulator Agent endpoints with real pipeline integration.
-
-Connects the frontend Live Console to the real orchestration pipeline.
 """
 
 from __future__ import annotations
@@ -87,7 +85,6 @@ def start_simulator(req: SimulatorStartRequest):
     now = dt.datetime.utcnow()
     first_turn_index = pipeline_result.get("customer_simulation", {}).get("turn_index", 1)
     
-    # ── FIXED: Persist the first dynamic customer message to MongoDB ──
     mongo.messages.insert_one({
         "_id": str(uuid4()),
         "session_id": req.session_id,
@@ -120,7 +117,7 @@ def simulator_message(req: SimulatorTurnRequest):
 
     now = dt.datetime.utcnow()
 
-    # ── FIXED: Persist Human Agent message directly ──
+    # 1. Persist the human agent's message
     existing_agent = mongo.messages.find_one({
         "session_id": req.session_id,
         "turn_index": req.turn_index,
@@ -137,25 +134,34 @@ def simulator_message(req: SimulatorTurnRequest):
             "created_at": now,
         })
 
+    # 2. Safely grab the customer message that just finished streaming
+    customer_turn_index = req.turn_index + 1
+    customer_doc = mongo.messages.find_one({
+        "session_id": req.session_id,
+        "turn_index": customer_turn_index,
+        "role": "customer"
+    })
+    
+    actual_customer_message = customer_doc["content"] if customer_doc else "I need assistance."
+
+    # 3. Pull history and FORCE the latest message into the context to beat the race condition
     conversation_history = list(
         mongo.messages.find({"session_id": req.session_id}).sort("turn_index", 1)
     )
+    
+    # If the database was too slow to return the streaming message, manually append it
+    if not any(msg.get("turn_index") == customer_turn_index for msg in conversation_history):
+        conversation_history.append({
+            "role": "customer",
+            "content": actual_customer_message,
+            "turn_index": customer_turn_index
+        })
 
     session = mongo.sessions.find_one({"_id": req.session_id})
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
 
-    # ── FIXED: Fetch the customer message that was JUST streamed and saved ──
-    customer_doc = mongo.messages.find_one({
-        "session_id": req.session_id,
-        "turn_index": req.turn_index + 1,
-        "role": "customer"
-    })
-    
-    # Fallback just in case the stream failed to save
-    actual_customer_message = customer_doc["content"] if customer_doc else "I need assistance."
-
-    # Run the pipeline (this handles Intent, Sentiment, and Knowledge)
+    # 4. Run the pipeline explicitly passing the CUSTOMER'S turn index
     pipeline_result = run_pipeline(
         session_id=req.session_id,
         mode=session.get("mode", "Simulator"),
@@ -164,16 +170,16 @@ def simulator_message(req: SimulatorTurnRequest):
         scenario=session.get("scenario", ""),
         persona=session.get("persona"),
         conversation_history=conversation_history,
-        turn_index=req.turn_index,
+        turn_index=customer_turn_index,  # <-- FIXED: Tell pipeline we are analyzing the customer!
+        skip_simulator=True,
     )
 
     intent_sent = pipeline_result.get("intent_sentiment", {})
     knowledge = pipeline_result.get("knowledge", {})
     
-    # Extract frustration safely for the UI
     current_frustration = intent_sent.get("frustration_score", 30) if intent_sent else 30
 
-    # ── FIXED: Update the streamed customer document with the new analytics ──
+    # 5. Lock the new analytics to the customer document in the database
     if customer_doc:
         mongo.messages.update_one(
             {"_id": customer_doc["_id"]},
@@ -187,7 +193,7 @@ def simulator_message(req: SimulatorTurnRequest):
     return {
         "session_id": req.session_id,
         "thread_id": req.thread_id,
-        "turn_index": req.turn_index + 1,
+        "turn_index": customer_turn_index,
         "customer_message": actual_customer_message,
         "metadata": {"tone": intent_sent.get("emotion", "neutral") if intent_sent else "neutral"},
         "intent_sentiment": intent_sent,
@@ -262,7 +268,6 @@ async def stream_simulator_message(
                 import asyncio
                 await asyncio.sleep(0.05)
 
-        # ── FIXED: Actually save the streamed AI message to MongoDB so the pipeline can find it ──
         if collected_message:
             mongo.messages.insert_one({
                 "_id": str(uuid4()),

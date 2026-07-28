@@ -4,7 +4,7 @@ pipeline.py
 LangGraph orchestration pipeline — Milestone 2 real implementation.
 
 Staged flow:
-- Stage 1: Intent & Sentiment Analysis always runs FIRST (every turn)
+- Stage 1: Intent & Sentiment Analysis always runs FIRST (every turn)g
 - Stage 2: Knowledge Recommendation runs conditionally when intent
   suggests the customer needs information
 - Stage 3: Customer Simulator runs in Simulator Mode
@@ -35,6 +35,7 @@ def run_pipeline(
     persona: str | None = None,
     conversation_history: list[dict[str, Any]] | None = None,
     turn_index: int = 0,
+    skip_simulator: bool = False,
 ) -> dict:
     """Execute the orchestration pipeline with REAL agent calls.
 
@@ -54,6 +55,7 @@ def run_pipeline(
         persona: Customer persona (optional).
         conversation_history: Previous conversation messages (optional).
         turn_index: Current turn index.
+        skip_simulator: If True, skips generating a new simulator message.
 
     Returns:
         dict with results from all pipeline stages.
@@ -169,7 +171,9 @@ def run_pipeline(
         "note": "skipped — not Simulator mode",
     }
 
-    if mode == "Simulator":
+    if skip_simulator:
+        print(f"[pipeline] Stage 3: Customer Simulator SKIPPED (skip_simulator=True)")
+    elif mode == "Simulator":
         print(f"[pipeline] Stage 3: Customer Simulator")
         customer_simulation = _safe_run_agent(
             agent_name="simulator",
@@ -261,4 +265,3 @@ def _safe_run_agent(
             "error_type": type(e).__name__,
             "note": f"Agent {agent_name} failed to execute",
         }
-
