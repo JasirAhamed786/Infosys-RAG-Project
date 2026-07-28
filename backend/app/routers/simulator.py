@@ -3,10 +3,7 @@ simulator.py
 
 Milestone 2 — Customer Simulator Agent endpoints with real pipeline integration.
 
-Connects the frontend Live Console to the real orchestration pipeline:
-- POST /simulator/start — Start a simulation session
-- POST /simulator/message — Send an agent message and get a simulated customer reply
-- GET /simulator/stream/{session_id} — Stream customer messages token-by-token
+Connects the frontend Live Console to the real orchestration pipeline.
 """
 
 from __future__ import annotations
@@ -61,21 +58,14 @@ class SimulatorTurnResponse(BaseModel):
 
 @router.post("/simulator/start", response_model=SimulatorStartResponse)
 def start_simulator(req: SimulatorStartRequest):
-    """Start a new simulator session.
-
-    Creates a thread ID and generates the first customer message
-    using the real Simulator Agent.
-    """
     mongo.connect()
 
-    # Validate session exists
     session = mongo.sessions.find_one({"_id": req.session_id})
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
 
     thread_id = str(uuid4())
 
-    # Run the pipeline to get the first customer message
     pipeline_result = run_pipeline(
         session_id=req.session_id,
         mode=req.mode,
@@ -94,9 +84,10 @@ def start_simulator(req: SimulatorStartRequest):
         "internal_frustration_level", 35
     )
 
-    # Persist the first customer message to MongoDB
     now = dt.datetime.utcnow()
     first_turn_index = pipeline_result.get("customer_simulation", {}).get("turn_index", 1)
+    
+    # ── FIXED: Persist the first dynamic customer message to MongoDB ──
     mongo.messages.insert_one({
         "_id": str(uuid4()),
         "session_id": req.session_id,
@@ -122,11 +113,6 @@ def start_simulator(req: SimulatorStartRequest):
 
 @router.post("/simulator/message", response_model=SimulatorTurnResponse)
 def simulator_message(req: SimulatorTurnRequest):
-    """Process an agent message and return the simulated customer response.
-
-    Runs the full pipeline: Intent/Sentiment → Knowledge → Simulator.
-    Persists both the agent message and the simulated customer response to MongoDB.
-    """
     mongo.connect()
 
     if not req.user_message.strip():
@@ -134,37 +120,42 @@ def simulator_message(req: SimulatorTurnRequest):
 
     now = dt.datetime.utcnow()
 
-    # ── Persist agent message (with idempotency check) ──
+    # ── FIXED: Persist Human Agent message directly ──
     existing_agent = mongo.messages.find_one({
         "session_id": req.session_id,
         "turn_index": req.turn_index,
         "role": "agent",
     })
-    if existing_agent:
-        print(f"[simulator] Agent message already exists for turn {req.turn_index}, skipping insert")
-    else:
-        agent_doc = {
+    
+    if not existing_agent:
+        mongo.messages.insert_one({
             "_id": str(uuid4()),
             "session_id": req.session_id,
             "turn_index": req.turn_index,
             "role": "agent",
             "content": req.user_message,
             "created_at": now,
-        }
-        mongo.messages.insert_one(agent_doc)
+        })
 
-    # Get conversation history for pipeline context
     conversation_history = list(
-        mongo.messages.find({"session_id": req.session_id})
-        .sort("turn_index", 1)
+        mongo.messages.find({"session_id": req.session_id}).sort("turn_index", 1)
     )
 
-    # Get session details for context
     session = mongo.sessions.find_one({"_id": req.session_id})
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
 
-    # Run the pipeline with the agent's message
+    # ── FIXED: Fetch the customer message that was JUST streamed and saved ──
+    customer_doc = mongo.messages.find_one({
+        "session_id": req.session_id,
+        "turn_index": req.turn_index + 1,
+        "role": "customer"
+    })
+    
+    # Fallback just in case the stream failed to save
+    actual_customer_message = customer_doc["content"] if customer_doc else "I need assistance."
+
+    # Run the pipeline (this handles Intent, Sentiment, and Knowledge)
     pipeline_result = run_pipeline(
         session_id=req.session_id,
         mode=session.get("mode", "Simulator"),
@@ -176,44 +167,32 @@ def simulator_message(req: SimulatorTurnRequest):
         turn_index=req.turn_index,
     )
 
-    customer_sim = pipeline_result.get("customer_simulation", {})
     intent_sent = pipeline_result.get("intent_sentiment", {})
     knowledge = pipeline_result.get("knowledge", {})
+    
+    # Extract frustration safely for the UI
+    current_frustration = intent_sent.get("frustration_score", 30) if intent_sent else 30
 
-    # ── Persist customer response (with idempotency check) ──
-    customer_msg = customer_sim.get("customer_message", "")
-    if customer_msg:
-        customer_turn_index = customer_sim.get("turn_index", req.turn_index + 1)
-        existing_customer = mongo.messages.find_one({
-            "session_id": req.session_id,
-            "turn_index": customer_turn_index,
-            "role": "customer",
-        })
-        if existing_customer:
-            print(f"[simulator] Customer message already exists for turn {customer_turn_index}, skipping insert")
-        else:
-            customer_doc = {
-                "_id": str(uuid4()),
-                "session_id": req.session_id,
-                "turn_index": customer_turn_index,
-                "role": "customer",
-                "content": customer_msg,
-                "created_at": now,
+    # ── FIXED: Update the streamed customer document with the new analytics ──
+    if customer_doc:
+        mongo.messages.update_one(
+            {"_id": customer_doc["_id"]},
+            {"$set": {
                 "intent_sentiment_result": intent_sent,
                 "knowledge_result": knowledge,
-                "frustration_level": customer_sim.get("internal_frustration_level"),
-            }
-            mongo.messages.insert_one(customer_doc)
+                "frustration_level": current_frustration
+            }}
+        )
 
     return {
         "session_id": req.session_id,
         "thread_id": req.thread_id,
-        "turn_index": customer_sim.get("turn_index", req.turn_index + 1),
-        "customer_message": customer_msg,
-        "metadata": customer_sim.get("metadata", {"tone": "neutral"}),
+        "turn_index": req.turn_index + 1,
+        "customer_message": actual_customer_message,
+        "metadata": {"tone": intent_sent.get("emotion", "neutral") if intent_sent else "neutral"},
         "intent_sentiment": intent_sent,
         "knowledge": knowledge,
-        "frustration_level": customer_sim.get("internal_frustration_level"),
+        "frustration_level": current_frustration,
     }
 
 
@@ -223,28 +202,16 @@ async def stream_simulator_message(
     agent_message: str = "",
     turn_index: int = 0,
 ):
-    """Stream a simulated customer message token-by-token using Groq's streaming API.
-
-    This endpoint is used by the frontend Live Console to show real-time
-    customer responses as they're generated.
-
-    Query params:
-        agent_message: The latest agent message to respond to.
-        turn_index: Current turn index.
-    """
     mongo.connect()
 
     session = mongo.sessions.find_one({"_id": session_id})
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
 
-    # Get conversation history
     conversation_history = list(
-        mongo.messages.find({"session_id": session_id})
-        .sort("turn_index", 1)
+        mongo.messages.find({"session_id": session_id}).sort("turn_index", 1)
     )
 
-    # Build the system prompt for streaming
     persona = session.get("persona")
     product_context = session.get("product_context", "")
     scenario = session.get("scenario", "")
@@ -272,6 +239,8 @@ async def stream_simulator_message(
     user_prompt = "Conversation:\n" + "\n".join(context_lines) + "\n\nGenerate next customer message:"
 
     async def generate():
+        collected_message = ""
+        
         if groq_client.api_key:
             try:
                 for token in groq_client.generate_stream(
@@ -281,16 +250,29 @@ async def stream_simulator_message(
                     temperature=0.8,
                     max_tokens=512,
                 ):
+                    collected_message += token
                     yield f"data: {token}\n\n"
             except Exception as e:
                 yield f"data: [Error: {e}]\n\n"
         else:
-            # Fallback: return a mock message
             fallback = "I'm having trouble with this issue. Can you please help me understand what's going on?"
+            collected_message = fallback
             for char in fallback:
                 yield f"data: {char}\n\n"
                 import asyncio
                 await asyncio.sleep(0.05)
+
+        # ── FIXED: Actually save the streamed AI message to MongoDB so the pipeline can find it ──
+        if collected_message:
+            mongo.messages.insert_one({
+                "_id": str(uuid4()),
+                "session_id": session_id,
+                "turn_index": turn_index + 1,
+                "role": "customer",
+                "content": collected_message.strip(),
+                "created_at": dt.datetime.utcnow(),
+                "frustration_level": current_frustration,
+            })
 
         yield "data: [DONE]\n\n"
 
