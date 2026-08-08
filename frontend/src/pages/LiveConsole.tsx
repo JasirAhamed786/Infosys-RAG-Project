@@ -61,6 +61,15 @@ export default function LiveConsole() {
 
   // Client-side typewriter over the complete customer message (not backend streaming)
   const typingRef = useRef<number | null>(null)
+  // Tracks the identity ("turnIndex|content") of the message already animated.
+  // Persists across re-renders AND pageloads via context? No — it's a ref, but the
+  // KEY fix: we only animate a message we have NOT animated before in this component
+  // instance. On remount (navigating away/back), refs reset to empty, so the last
+  // message WOULD re-animate. To avoid that, we ALSO key on messages.length so we
+  // never re-animate an already-rendered message when the component merely re-renders
+  // due to context updates (e.g. latestIntentSentiment arriving). The animation only
+  // starts when a BRAND NEW customer message is appended (messages.length grows).
+  const animatedCountRef = useRef(0)
   const [typingText, setTypingText] = useState('')
   const [isTyping, setIsTyping] = useState(false)
 
@@ -73,20 +82,28 @@ export default function LiveConsole() {
     })
   }, [messages, typingText, isTyping])
 
-  // ─── Typewriter effect: reveal the latest customer message word-by-word ──
-  // Pure frontend visual; no backend calls. Runs after the last customer
-  // message lands in context (from submitTurn's single conversationTurn call).
+  // ─── Typewriter effect: reveal the latest NEW customer message word-by-word ──
+  // Pure frontend visual; no backend calls. Runs only when a fresh customer message
+  // is appended to context (from submitTurn's single conversationTurn call).
+  // Key dependencies: messages (array length) + isTyping. We do NOT depend on
+  // typingText, so typing state updates do not re-trigger this effect.
   useEffect(() => {
     if (isTyping) return // already animating
 
+    // Only animate when there are MORE messages now than what we've already animated.
+    // This prevents re-animating the same (last) message on every unrelated re-render
+    // (e.g. latestIntentSentiment/latestKnowledge arriving right after a turn).
+    const customerCount = messages.filter((m) => m.role === 'customer').length
+    if (customerCount <= animatedCountRef.current) return
+
+    // Grab the most recent customer message that hasn't been animated yet.
     const lastCustomer = [...messages].reverse().find((m) => m.role === 'customer')
     if (!lastCustomer) return
     const fullText = lastCustomer.content ?? ''
     if (!fullText) return
 
-    // Only run the typewriter for the most recent message (the tail of the history).
-    const startedAnimations = typingRef.current ?? 0
-    if (startedAnimations >= messages.length) return
+    // Mark it as animating so the guard above prevents re-entry.
+    animatedCountRef.current = messages.filter((m) => m.role === 'customer').length
 
     setIsTyping(true)
     setTypingText('')

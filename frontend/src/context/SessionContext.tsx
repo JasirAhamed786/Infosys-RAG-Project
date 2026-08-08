@@ -328,8 +328,19 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 
         dispatch({ type: 'TURN_PENDING' })
 
+        // Safety timeout: if the backend /conversation/turn request hangs (e.g. a
+        // slow Groq call or a stalled pipeline), we must NOT leave turnStatus in
+        // "pending" forever — that disables the reply input (can't type/send).
+        // We race the request against a 30s timer; whichever settles first wins.
+        let timeoutId: ReturnType<typeof setTimeout> | undefined
+        const timeoutPromise = new Promise<never>((_, reject) => {
+          timeoutId = setTimeout(() => {
+            reject(new Error('Turn timed out after 30s — the backend did not respond. Please try again.'))
+          }, 30_000)
+        })
+
         try {
-          const res = await conversationTurn({
+          const reqPromise = conversationTurn({
             session_id: state.sessionId,
             mode: state.sessionMode ?? 'Simulator',
             product_context: state.productContext,
@@ -338,6 +349,16 @@ export function SessionProvider({ children }: { children: ReactNode }) {
             user_message: trimmed,
             turn_index: state.turnCount,
           })
+
+          // If the timeout wins the race, the underlying request may still be
+          // in-flight. Swallow its eventual rejection so it doesn't surface as an
+          // unhandled promise rejection (the timeout already handled the error UI).
+          reqPromise.catch(() => {
+            /* intentionally ignored — the 30s timeout already handled this turn */
+          })
+
+          const res = await Promise.race([reqPromise, timeoutPromise])
+          if (timeoutId) clearTimeout(timeoutId)
 
           const customerSim = res.customer_simulation ?? {}
           const customerMessage = customerSim.customer_message ?? ''
