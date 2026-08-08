@@ -1,6 +1,6 @@
 """coaching_agent.py
 
-Coaching & Response Suggestion Agent (Gemini)
+Coaching & Response Suggestion Agent (Groq — Llama 3.3 70B)
 
 Replaces the Milestone 3 stub with a real LLM implementation.
 
@@ -11,8 +11,7 @@ Input (per turn):
   - The raw customer message being analyzed
 
 Behavior:
-  - Uses Gemini (the knowledge/coaching tier; Groq is occupied by the
-    simulator + intent agents) to generate:
+  - Uses Groq (Llama 3.3 70B) to generate:
       - suggested_response: a draft reply for the human agent
       - tone_feedback: brief note on the tone of the proposed reply
       - communication_tips: 1-3 concise coaching tips
@@ -28,7 +27,7 @@ from __future__ import annotations
 from typing import Any
 
 from app.core.config import settings
-from app.utils.llm_client import gemini_client
+from app.utils.llm_client import groq_client
 
 # Strict JSON-only system prompt to enforce the structured coaching output.
 COACHING_SYSTEM_PROMPT = """You are a Coaching & Response Suggestion agent for an AI customer support coaching system.
@@ -63,7 +62,7 @@ def run_coaching_agent(
     turn_index: int,
     **_: Any,
 ) -> dict:
-    """Generate a coaching suggestion using Gemini.
+    """Generate a coaching suggestion using Groq (Llama 3.3 70B).
 
     Returns a dict with keys: agent, turn_index, suggested_response,
     tone_feedback, communication_tips, confidence.
@@ -107,13 +106,13 @@ Generate a coaching suggestion. Output STRICT JSON ONLY."""
         "confidence": 0.0,
     }
 
-    if not gemini_client.api_key:
-        print("[coaching_agent] WARNING: GEMINI_API_KEY not set. Returning fallback.")
+    if not groq_client.api_key:
+        print("[coaching_agent] WARNING: GROQ_API_KEY not set. Returning fallback.")
         return _fallback(result, customer_message, intent, sentiment)
 
     try:
-        gres = gemini_client.generate_json(
-            model=settings.GEMINI_KNOWLEDGE_MODEL,
+        gres = groq_client.generate_json(
+            model=settings.GROQ_COACHING_MODEL,
             system_prompt=COACHING_SYSTEM_PROMPT,
             user_prompt=user_prompt,
             temperature=0.4,
@@ -171,6 +170,6 @@ def _fallback(
         "Provide clear next steps and set expectations.",
     ]
     result["confidence"] = 0.3
-    result["note"] = f"fallback used (sentiment={sentiment}) — Gemini unavailable or errored"
+    result["note"] = f"fallback used (sentiment={sentiment}) — Groq unavailable or errored"
     return result
 

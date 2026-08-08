@@ -16,14 +16,17 @@ class Settings(BaseSettings):
     FRONTEND_ORIGIN: str = "http://localhost:5173"
     EMBEDDING_MODEL_NAME: str = "sentence-transformers/all-MiniLM-L6-v2"
 
-    # Shared ChromaDB collection name for all knowledge base documents
+# Shared ChromaDB collection name for all knowledge base documents
     CHROMA_COLLECTION_NAME: str = "clario_knowledge_base"
 
     # Groq models
     GROQ_SIMULATOR_MODEL: str = "llama-3.3-70b-versatile"
     
     # <-- Set this back to the 70B model that successfully passed your debug test!
-    GROQ_INTENT_MODEL: str = "llama-3.3-70b-versatile"  
+    GROQ_INTENT_MODEL: str = "llama-3.3-70b-versatile"
+
+    # Groq model for the Coaching & Response Suggestion agent
+    GROQ_COACHING_MODEL: str = "llama-3.3-70b-versatile"
 
     # Gemini model (using stable release)
     GEMINI_KNOWLEDGE_MODEL: str = "gemini-3.5-flash-lite"

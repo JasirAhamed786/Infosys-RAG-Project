@@ -73,7 +73,7 @@ export interface CoachingSuggestion {
 }
 
 export interface EscalationResult {
-  escalation_risk: string
+  escalation_risk: number
   risk_level: string
   reasoning: string[]
   recommended_action?: string
@@ -213,7 +213,7 @@ function reducer(state: SessionState, action: SessionAction): SessionState {
         : {
             turnIndex: customerTurnIndex,
             escalation: {
-              escalation_risk: 'low',
+              escalation_risk: 0,
               risk_level: 'low',
               reasoning: [],
               alert_triggered: false,
@@ -376,15 +376,20 @@ export function SessionProvider({ children }: { children: ReactNode }) {
               }
             : null
 
-          // Convert escalation (pipeline returns { risk, score, reasons, ... }).
+          // Convert escalation (pipeline returns { escalation_risk, risk_level,
+          // reasoning, recommended_action, alert_triggered }).
           const escalation: EscalationResult | null = res.escalation
             ? {
-                escalation_risk: res.escalation.risk ?? 'low',
-                risk_level: res.escalation.risk ?? 'low',
-                reasoning: res.escalation.reasons ?? [],
+                escalation_risk: typeof res.escalation.escalation_risk === 'number'
+                  ? res.escalation.escalation_risk
+                  : 0,
+                risk_level: res.escalation.risk_level ?? 'low',
+                reasoning: res.escalation.reasoning ?? [],
                 recommended_action: res.escalation.recommended_action,
-                alert_triggered: res.escalation.alert_triggered ?? (res.escalation.risk === 'high'),
-                score: res.escalation.score ?? 0,
+                alert_triggered: res.escalation.alert_triggered ?? (res.escalation.risk_level === 'high'),
+                score: typeof res.escalation.escalation_risk === 'number'
+                  ? res.escalation.escalation_risk
+                  : 0,
               }
             : null
 

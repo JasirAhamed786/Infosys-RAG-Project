@@ -119,12 +119,12 @@ export interface ConversationTurnResponse {
     confidence?: number
   }
   escalation: {
-    risk: string
-    score: number
-    reasons?: string[]
-    reasoning?: string[]
+    escalation_risk: number
+    risk_level: string
+    reasoning: string[]
     recommended_action?: string
-    alert_triggered?: boolean
+    alert_triggered: boolean
+    score: number
   }
   customer_simulation: {
     customer_message: string
