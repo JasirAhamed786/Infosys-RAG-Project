@@ -61,15 +61,11 @@ export default function LiveConsole() {
 
   // Client-side typewriter over the complete customer message (not backend streaming)
   const typingRef = useRef<number | null>(null)
-  // Tracks the identity ("turnIndex|content") of the message already animated.
-  // Persists across re-renders AND pageloads via context? No — it's a ref, but the
-  // KEY fix: we only animate a message we have NOT animated before in this component
-  // instance. On remount (navigating away/back), refs reset to empty, so the last
-  // message WOULD re-animate. To avoid that, we ALSO key on messages.length so we
-  // never re-animate an already-rendered message when the component merely re-renders
-  // due to context updates (e.g. latestIntentSentiment arriving). The animation only
-  // starts when a BRAND NEW customer message is appended (messages.length grows).
-  const animatedCountRef = useRef(0)
+  // Identity ("turnIndex|content-prefix") of the most recent customer message that
+  // has ALREADY been animated. We key the animation on the identity of the latest
+  // customer message — NOT a running count — so it reliably re-arms on every genuine
+  // new customer message and never re-animates an already-revealed one.
+  const lastAnimatedIdRef = useRef<string | null>(null)
   const [typingText, setTypingText] = useState('')
   const [isTyping, setIsTyping] = useState(false)
 
@@ -83,27 +79,26 @@ export default function LiveConsole() {
   }, [messages, typingText, isTyping])
 
   // ─── Typewriter effect: reveal the latest NEW customer message word-by-word ──
-  // Pure frontend visual; no backend calls. Runs only when a fresh customer message
-  // is appended to context (from submitTurn's single conversationTurn call).
-  // Key dependencies: messages (array length) + isTyping. We do NOT depend on
-  // typingText, so typing state updates do not re-trigger this effect.
+  // Pure frontend visual; no backend calls. Runs only when a customer message with a
+  // NEW identity appears in context (from submitTurn's single conversationTurn call).
+  // Key dependencies: messages + isTyping. We do NOT depend on typingText, so typing
+  // state updates do not re-trigger this effect.
   useEffect(() => {
     if (isTyping) return // already animating
 
-    // Only animate when there are MORE messages now than what we've already animated.
-    // This prevents re-animating the same (last) message on every unrelated re-render
-    // (e.g. latestIntentSentiment/latestKnowledge arriving right after a turn).
-    const customerCount = messages.filter((m) => m.role === 'customer').length
-    if (customerCount <= animatedCountRef.current) return
-
-    // Grab the most recent customer message that hasn't been animated yet.
+    // Find the most recent customer message and compute a stable identity.
     const lastCustomer = [...messages].reverse().find((m) => m.role === 'customer')
     if (!lastCustomer) return
     const fullText = lastCustomer.content ?? ''
     if (!fullText) return
 
-    // Mark it as animating so the guard above prevents re-entry.
-    animatedCountRef.current = messages.filter((m) => m.role === 'customer').length
+    const identity = `${lastCustomer.turnIndex}|${fullText.slice(0, 40)}`
+    // If this exact message was already animated, don't run again (prevents
+    // re-animating on unrelated re-renders like latestIntentSentiment arriving).
+    if (lastAnimatedIdRef.current === identity) return
+
+    // Mark it as animated BEFORE starting so re-entry is blocked during the loop.
+    lastAnimatedIdRef.current = identity
 
     setIsTyping(true)
     setTypingText('')
@@ -508,20 +503,8 @@ export default function LiveConsole() {
                   )
                 })}
 
-                {isTyping && typingText && (
-                  <div className="flex justify-start">
-                    <div className="max-w-[85%] rounded-2xl rounded-tl-sm bg-white border border-emerald-200 p-4 shadow-sm">
-                      <div className="flex items-center gap-2 mb-1.5">
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-600">Customer Typing</span>
-                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                      </div>
-                      <p className="text-[13px] text-gray-900 leading-relaxed">
-                        {typingText}
-                        <span className="inline-block w-1 h-3 bg-emerald-500 ml-0.5 animate-pulse align-baseline" />
-                      </p>
-                    </div>
-                  </div>
-                )}
+                {/* Single typewriter display — revealed in-place inside the newest
+                    customer bubble above (via displayText). No redundant bubble. */}
                 <div ref={messagesEndRef} />
               </div>
 
