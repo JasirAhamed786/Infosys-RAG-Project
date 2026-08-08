@@ -1,26 +1,19 @@
-# TODO: Reuse Previous Sessions in Live Console
+# Milestone 3 — Remaining Work Tracker
 
-## Plan Overview
-Add "Load Existing Session" capability to Live Console so users can reuse sessions created via Session Configuration module.
+Order (mandatory per instructions): Bug A → Bug B → Task 3 → 4 → 5 → 6 → 7. One commit per numbered task; report hash each time.
 
-## Steps
+## Tasks
 
-### Step 1: Backend — Add GET session endpoint
-- [x] Add `GET /api/sessions/{session_id}` to `backend/app/routers/sessions.py`
-- [x] Added `SessionDetailResponse` Pydantic model
-- [x] Added `HTTPException` import for 404 handling
+- [ ] **Task 1 (Bug B)**: Remove dead SSE read-path + "I need assistance." fallback in `simulator.py` so real customer message comes from pipeline. Commit.
+- [ ] **Task 2 (Bug A)**: Harden SessionContext `loadExistingSession`/`getSession` to use fetched session detail as source of truth (avoid stale display). Commit.
+- [ ] **Task 3**: Build real `coaching_agent.py` (Gemini). Full overwrite. Strict JSON: suggested_response, tone_feedback, communication_tips[1-3], confidence(0-1). `_safe_run_agent()`-pattern fallback only on API error. Commit.
+- [ ] **Task 4**: Build real `escalation_agent.py` (Gemini). Full overwrite. Strict JSON: escalation_risk(0-1), risk_level low/med/high, reasoning, recommended_action, alert_triggered(true when high). Runs every turn. Commit.
+- [ ] **Task 5**: Wire Stage 4 Coaching + Stage 5 Escalation into `pipeline.py` (diff), wrapped in `_safe_run_agent()`. Verify real JSON via test call. Commit.
+- [ ] **Task 6**: `LiveConsole.tsx` (diff) — TWO separate panels (Coaching + Escalation) in bottom grid, live from `useSession()`. Coaching: suggested_response + "Use this reply" button (fills input, no auto-send), tone_feedback, tips. Escalation: risk_level color indicator, reasoning, recommended_action, warning state if alert_triggered. Empty states match existing pattern. Don't touch CoachingFeed/EscalationAlerts pages. Run `npx tsc --noEmit`. Commit.
+- [ ] **Task 7**: End-to-end verify — 3-4 turns; show real session doc (Bug A fixed), real messages docs (Bug B fixed), real coaching+escalation JSON for ≥2 distinct turns (dynamic, not canned), both panels update live. Commit.
 
-### Step 2: Frontend API — Add `getSession()` function
-- [x] Add `SessionDetailResponse` interface + `getSession()` to `frontend/src/services/api.ts`
-
-### Step 3: Frontend UI — Add "Load Existing Session" to LiveConsole
-- [x] Add `sessionMode` state toggle (`'new'` | `'existing'`)
-- [x] Add `existingSessionId` input state
-- [x] Added `handleLoadExistingSession()`: fetches session → starts simulator
-- [x] Added toggle UI with two buttons: "New Session" / "Load Existing Session"
-- [x] Load form: session ID input + "Load & Start Simulator" button
-- [x] Error display for both modes
-
-### Step 4: Testing
-- [ ] Not needed — changes are complete and ready for use
-
+## Notes
+- Do NOT touch `simulator_agent.py` or `intent_sentiment_agent.py`.
+- Diff-edits to existing files; full overwrite only for brand-new/brand-new-ish files.
+- Constraints: `npx tsc --noEmit` (frontend) after Task 6; backend compile/test after backend tasks.
+- Clean up temporary `debug_inspect_db.py` at the end.

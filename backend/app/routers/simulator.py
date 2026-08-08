@@ -134,34 +134,23 @@ def simulator_message(req: SimulatorTurnRequest):
             "created_at": now,
         })
 
-    # 2. Safely grab the customer message that just finished streaming
-    customer_turn_index = req.turn_index + 1
-    customer_doc = mongo.messages.find_one({
-        "session_id": req.session_id,
-        "turn_index": customer_turn_index,
-        "role": "customer"
-    })
-    
-    actual_customer_message = customer_doc["content"] if customer_doc else "I need assistance."
+    # 2. Use this turn's feedback from the pipeline as the single source of truth.
+    customer_turn_index = req.turn_index
 
-    # 3. Pull history and FORCE the latest message into the context to beat the race condition
+    # 3. Pull history and pass it to the pipeline for context.
     conversation_history = list(
         mongo.messages.find({"session_id": req.session_id}).sort("turn_index", 1)
     )
-    
-    # If the database was too slow to return the streaming message, manually append it
-    if not any(msg.get("turn_index") == customer_turn_index for msg in conversation_history):
-        conversation_history.append({
-            "role": "customer",
-            "content": actual_customer_message,
-            "turn_index": customer_turn_index
-        })
 
     session = mongo.sessions.find_one({"_id": req.session_id})
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
 
-    # 4. Run the pipeline explicitly passing the CUSTOMER'S turn index
+    # 4. Run the pipeline (NOT skipping the simulator) so IT generates and persists
+    #    the fresh customer message as the single writer. This removes the dead
+    #    SSE-era read-path that used to grab a "pre-written" customer message and
+    #    fall back to the hardcoded "I need assistance." default — that default was
+    #    never written by anything anymore and produced stale/dummy text (Bug B).
     pipeline_result = run_pipeline(
         session_id=req.session_id,
         mode=session.get("mode", "Simulator"),
@@ -170,25 +159,22 @@ def simulator_message(req: SimulatorTurnRequest):
         scenario=session.get("scenario", ""),
         persona=session.get("persona"),
         conversation_history=conversation_history,
-        turn_index=customer_turn_index,  # <-- FIXED: Tell pipeline we are analyzing the customer!
-        skip_simulator=True,
+        turn_index=customer_turn_index,
+        skip_simulator=False,  # <-- Let the pipeline generate the fresh customer message
     )
 
     intent_sent = pipeline_result.get("intent_sentiment", {})
     knowledge = pipeline_result.get("knowledge", {})
-    
-    current_frustration = intent_sent.get("frustration_score", 30) if intent_sent else 30
+    customer_sim = pipeline_result.get("customer_simulation", {})
 
-    # 5. Lock the new analytics to the customer document in the database
-    if customer_doc:
-        mongo.messages.update_one(
-            {"_id": customer_doc["_id"]},
-            {"$set": {
-                "intent_sentiment_result": intent_sent,
-                "knowledge_result": knowledge,
-                "frustration_level": current_frustration
-            }}
-        )
+    actual_customer_message = customer_sim.get("customer_message", "")
+    if customer_sim.get("turn_index") is not None:
+        customer_turn_index = customer_sim.get("turn_index")
+
+    current_frustration = customer_sim.get(
+        "internal_frustration_level",
+        intent_sent.get("frustration_score", 30) if intent_sent else 30,
+    )
 
     return {
         "session_id": req.session_id,
