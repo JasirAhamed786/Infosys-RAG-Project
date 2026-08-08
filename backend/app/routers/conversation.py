@@ -81,20 +81,36 @@ def conversation_turn(req: ConversationTurnRequest):
         }
         mongo.messages.insert_one(agent_doc)
 
+    # Load the authoritative session doc (Bug A). Prefer stored values so the
+    # pipeline always runs with the config the user actually saved — never stale
+    # or blank values sent from a stale frontend form. Fall back to the request
+    # body only if a stored field is missing.
+    session = mongo.sessions.find_one({"_id": req.session_id})
+    effective_mode = session.get("mode") if session and session.get("mode") else req.mode
+    effective_context = (
+        session.get("product_context") if session and session.get("product_context") else req.product_context
+    )
+    effective_scenario = (
+        session.get("scenario") if session and session.get("scenario") else req.scenario
+    )
+    effective_persona = (
+        session.get("persona") if session and session.get("persona") else req.persona
+    )
+
     # Get conversation history for context
     conversation_history = list(
         mongo.messages.find({"session_id": req.session_id})
         .sort("turn_index", 1)
     )
 
-    # Run the real pipeline
+    # Run the real pipeline with authoritative session config
     out = run_pipeline(
         session_id=req.session_id,
-        mode=req.mode,
+        mode=effective_mode,
         input_message=req.user_message,
-        product_context=req.product_context,
-        scenario=req.scenario,
-        persona=req.persona,
+        product_context=effective_context,
+        scenario=effective_scenario,
+        persona=effective_persona,
         conversation_history=conversation_history,
         turn_index=req.turn_index,
     )

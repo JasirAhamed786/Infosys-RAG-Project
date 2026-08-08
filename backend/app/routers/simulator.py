@@ -64,13 +64,22 @@ def start_simulator(req: SimulatorStartRequest):
 
     thread_id = str(uuid4())
 
+    # Source of truth = the stored session (Bug A). Prefer the authoritative Mongo
+    # session doc over the request body so the Live Console never shows stale or
+    # mismatched config (e.g. prior session's persona/context). Fall back to the
+    # request body only if a field is missing.
+    effective_mode = session.get("mode") or req.mode
+    effective_context = session.get("product_context") or req.product_context
+    effective_scenario = session.get("scenario") or req.scenario
+    effective_persona = session.get("persona") or req.persona
+
     pipeline_result = run_pipeline(
         session_id=req.session_id,
-        mode=req.mode,
+        mode=effective_mode,
         input_message="",
-        product_context=req.product_context,
-        scenario=req.scenario,
-        persona=req.persona,
+        product_context=effective_context,
+        scenario=effective_scenario,
+        persona=effective_persona,
         turn_index=0,
     )
 
