@@ -109,18 +109,27 @@ export interface ConversationTurnResponse {
       relevance_score: number
       why_relevant: string
     }[]
+    note?: string
   }
   coaching: {
     coaching_tips: string[]
     suggested_response: string
+    tone_feedback?: string
+    communication_tips?: string[]
+    confidence?: number
   }
   escalation: {
     risk: string
     score: number
+    reasons?: string[]
+    reasoning?: string[]
+    recommended_action?: string
+    alert_triggered?: boolean
   }
   customer_simulation: {
     customer_message: string
     internal_frustration_level: number
+    turn_index?: number
   }
 }
 
