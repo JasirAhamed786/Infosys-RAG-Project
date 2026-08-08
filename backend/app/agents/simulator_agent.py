@@ -259,17 +259,15 @@ Generate the NEXT customer message as your assigned persona. Remember:
     # Clean up the message
     customer_message = customer_message.strip().strip('"').strip("'")
 
-    # Save the generated message to MongoDB
-    now = dt.datetime.utcnow()
-    mongo.messages.insert_one({
-        "_id": str(uuid4()),
-        "session_id": session_id,
-        "turn_index": turn_index + 1,
-        "role": "customer",
-        "content": customer_message,
-        "created_at": now,
-        "frustration_level": new_frustration,
-    })
+    # NOTE: We do NOT persist the customer message here. Calling the pipeline
+    # via /conversation/turn (POST /api/conversation/turn) is the single writer
+    # for customer messages: it attaches intent/sentiment + knowledge results
+    # and stores them in ONE document with analytics. Persisting again here
+    # (as the old SSE path did) produced DUPLICATE customer documents with
+    # mismatched/blank fields. The standalone simulator endpoints that rely on
+    # this function persisting were replaced by conversation.turn in the
+    # SessionContext refactor, so there is no longer a caller expecting us to
+    # write to MongoDB. (See backend/app/routers/conversation.py.)
 
     return {
         "agent": "customer_simulator",
