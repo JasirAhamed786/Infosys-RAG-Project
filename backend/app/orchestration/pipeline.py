@@ -8,7 +8,9 @@ Staged flow:
 - Stage 2: Knowledge Recommendation runs conditionally when intent
   suggests the customer needs information
 - Stage 3: Customer Simulator runs in Simulator Mode
-- Coaching, Escalation, and Summary remain as mock stubs (Milestone 3/4)
+- Stage 4: Coaching & Response Suggestion (real Gemini agent, every turn)
+- Stage 5: Escalation Risk Monitor (real Gemini agent, every turn)
+- Stage 6: Summary remains a mock stub (Milestone 4)
 
 Includes:
 - Retry-with-backoff for 429 rate limit errors
@@ -23,6 +25,8 @@ from typing import Any, Literal
 from app.agents.intent_sentiment_agent import run_intent_sentiment_agent
 from app.agents.knowledge_agent import run_knowledge_agent
 from app.agents.simulator_agent import run_simulator_agent
+from app.agents.coaching_agent import run_coaching_agent
+from app.agents.escalation_agent import run_escalation_agent
 
 
 def run_pipeline(
@@ -44,7 +48,8 @@ def run_pipeline(
     2. Knowledge Recommendation (conditional — runs if intent suggests
        information need)
     3. Customer Simulator (runs in Simulator Mode only)
-    4. Coaching, Escalation, Summary (mock stubs — Milestone 3/4)
+    4. Coaching & Response Suggestion (real Gemini agent, every turn)
+    5. Escalation Risk Monitor (real Gemini agent, every turn)
 
     Args:
         session_id: The current session ID.
@@ -193,32 +198,39 @@ def run_pipeline(
         print(f"[pipeline] Stage 3: Simulator skipped (mode: {mode})")
 
     # ============================================================
-    # Stage 4/5: Coaching & Escalation (mock stubs — Milestone 3)
+    # Stage 4: Coaching & Response Suggestion (real Gemini agent)
     # ============================================================
-    coaching = {
-        "agent": "coaching",
-        "turn_index": turn_index,
-        "coaching_tips": [
-            "Acknowledge the customer's concern and show empathy.",
-            "Ask clarifying questions to better understand the issue.",
-            "Provide clear next steps and set expectations.",
-        ],
-        "suggested_response": (
-            "I understand your concern. Let me look into this for you. "
-            "Could you provide a few more details so I can help resolve this quickly?"
-        ),
-        "response_alternatives": [],
-        "note": "mock stub — Milestone 3 will implement real coaching logic",
-    }
+    print(f"[pipeline] Stage 4: Coaching (turn {turn_index})")
+    coaching = _safe_run_agent(
+        agent_name="coaching",
+        agent_func=run_coaching_agent,
+        session_id=session_id,
+        intent=intent_sentiment.get("intent", "general_question"),
+        sentiment=intent_sentiment.get("emotion", "neutral"),
+        frustration_score=intent_sentiment.get("frustration_score"),
+        recommended_kb=knowledge_result.get("results", []),
+        customer_message=customer_message_to_analyze,
+        turn_index=turn_index,
+    )
+    print(f"[pipeline] Coaching suggested_response "
+          f"({len(coaching.get('suggested_response', ''))} chars)")
 
-    escalation = {
-        "agent": "escalation_risk",
-        "turn_index": turn_index,
-        "risk": "low",
-        "score": 0.15,
-        "reasons": [],
-        "note": "mock stub — Milestone 3 will implement real escalation logic",
-    }
+    # ============================================================
+    # Stage 5: Escalation Risk Monitor (real Gemini agent, every turn)
+    # ============================================================
+    print(f"[pipeline] Stage 5: Escalation Risk (turn {turn_index})")
+    escalation = _safe_run_agent(
+        agent_name="escalation",
+        agent_func=run_escalation_agent,
+        session_id=session_id,
+        intent=intent_sentiment.get("intent", "general_question"),
+        sentiment=intent_sentiment.get("emotion", "neutral"),
+        frustration_score=intent_sentiment.get("frustration_score"),
+        turn_index=turn_index,
+        customer_message=customer_message_to_analyze,
+    )
+    print(f"[pipeline] Escalation risk: {escalation.get('risk_level')} "
+          f"({escalation.get('escalation_risk')})")
 
     # ============================================================
     # Build and return the combined pipeline result
