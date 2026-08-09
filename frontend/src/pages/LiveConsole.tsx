@@ -73,7 +73,22 @@ export default function LiveConsole() {
   const [typingText, setTypingText] = useState('')
   const [isTyping, setIsTyping] = useState(false)
 
-  const messagesEndRef = useRef<HTMLDivElement>(null)
+const messagesEndRef = useRef<HTMLDivElement>(null)
+
+  // ─── Defensive remount reset ──────────────────────────────────
+  // When the user navigates away mid-turn/mid-typing and comes back, this
+  // component remounts. Any stale typewriter or pending-disabled state would
+  // otherwise leave the reply input locked. Reset to a clean state on mount so
+  // the console is always usable after navigation.
+  useEffect(() => {
+    typingGenRef.current += 1
+    setIsTyping(false)
+    setTypingText('')
+    if (typingRef.current) {
+      window.clearTimeout(typingRef.current)
+      typingRef.current = null
+    }
+  }, [])
 
   // ─── Auto-Scroll ──────────────────────────────────────────────
   useEffect(() => {

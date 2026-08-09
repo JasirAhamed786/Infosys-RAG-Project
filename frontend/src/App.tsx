@@ -27,31 +27,24 @@ export default function App() {
         <TopNav />
 
         <div className="mx-auto max-w-7xl px-4 md:px-8 pt-6">
-          <section className="glass rounded-3xl p-6 md:p-8 overflow-hidden fade-in-up">
-            {/* ... existing header content ... */}
-            <div className="absolute inset-0 pointer-events-none opacity-70">
-              <div className="absolute -top-16 -left-16 h-40 w-40 rounded-full bg-blue-500/20 blur-2xl" />
-              <div className="absolute -bottom-16 -right-16 h-40 w-40 rounded-full bg-emerald-500/20 blur-2xl" />
-            </div>
-
-            <div className="relative flex flex-col md:flex-row md:items-end md:justify-between gap-6">
+          <section className="surface p-6 md:p-8 fade-in-up">
+            <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6">
               <div>
-                <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/60 px-4 py-2 text-xs font-semibold text-slate-700 shadow-sm">
-                  <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-                  Ready
+                <div className="inline-flex items-center gap-2 rounded-full border border-[#E4E7EC] bg-white px-3.5 py-1.5 text-xs font-semibold text-[#667085]">
+                  <span className="h-1.5 w-1.5 rounded-full bg-[#2E5AAC]" />
+                  System ready
                 </div>
-                <h1 className="mt-4 text-3xl md:text-4xl font-extrabold tracking-tight text-slate-900">
-                  Clario - AI <span className="text-blue-700">Coaching</span> Assistant
+                <h1 className="mt-4 text-3xl md:text-4xl font-semibold tracking-tight text-[#101828]">
+                  Clario — AI <span className="text-[#2E5AAC]">Coaching</span> Assistant
                 </h1>
-                <p className="mt-2 text-sm md:text-base text-slate-600 max-w-xl">
-                  Configure your session simulator or ingest your knowledge base to power faster, more accurate coaching.
+                <p className="mt-2 text-sm md:text-base text-[#667085] max-w-xl">
+                  Configure a session simulator or ingest a knowledge base to power faster, more accurate live coaching.
                 </p>
               </div>
-              {/* ... stats grid ... */}
-              <div className="grid grid-cols-3 gap-3 w-full md:w-auto">
-                <div className="rounded-2xl border border-slate-200 bg-white/70 p-3 text-center"><div className="text-xs font-semibold text-slate-500">Modes</div><div className="mt-1 text-lg font-bold text-slate-900">3</div></div>
-                <div className="rounded-2xl border border-slate-200 bg-white/70 p-3 text-center"><div className="text-xs font-semibold text-slate-500">RAG</div><div className="mt-1 text-lg font-bold text-slate-900">Upload</div></div>
-                <div className="rounded-2xl border border-slate-200 bg-white/70 p-3 text-center"><div className="text-xs font-semibold text-slate-500">API</div><div className="mt-1 text-lg font-bold text-slate-900">Ready</div></div>
+              <div className="grid grid-cols-3 gap-4 w-full md:w-auto">
+                <div className="rounded-[8px] border border-[#E4E7EC] bg-white p-3 text-center"><div className="text-xs font-medium text-[#667085]">Modes</div><div className="mt-1 text-lg font-semibold text-[#101828]">3</div></div>
+                <div className="rounded-[8px] border border-[#E4E7EC] bg-white p-3 text-center"><div className="text-xs font-medium text-[#667085]">RAG</div><div className="mt-1 text-lg font-semibold text-[#101828]">Upload</div></div>
+                <div className="rounded-[8px] border border-[#E4E7EC] bg-white p-3 text-center"><div className="text-xs font-medium text-[#667085]">API</div><div className="mt-1 text-lg font-semibold text-[#101828]">Ready</div></div>
               </div>
             </div>
           </section>

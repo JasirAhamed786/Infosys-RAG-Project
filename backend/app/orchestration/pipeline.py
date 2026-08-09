@@ -20,6 +20,7 @@ Includes:
 from __future__ import annotations
 
 import traceback
+from concurrent.futures import ThreadPoolExecutor
 from typing import Any, Literal
 
 from app.agents.intent_sentiment_agent import run_intent_sentiment_agent
@@ -87,24 +88,31 @@ def run_pipeline(
     print(f"[pipeline] customer_message_to_analyze: "
           f"'{customer_message_to_analyze[:80]}{'...' if len(customer_message_to_analyze) > 80 else ''}'")
 
+# ============================================================
+    # Stage 1: Intent & Sentiment + Simulator (RUN IN PARALLEL)
     # ============================================================
-    # Stage 1: Intent & Sentiment Analysis (skipped if no message)
-    # ============================================================
+    # These two stages are independent of one another, so we run them
+    # concurrently to cut wall-clock latency. Coaching, Knowledge and
+    # Escalation depend on the intent result, so they run after this
+    # first wave.
     skip_intent = not customer_message_to_analyze or not customer_message_to_analyze.strip()
-    if skip_intent:
-        print(f"[pipeline] Stage 1: Intent & Sentiment SKIPPED — no customer message to analyze")
-        intent_sentiment = {
-            "agent": "intent_sentiment",
-            "turn_index": turn_index,
-            "intent": "general_question",
-            "emotion": "neutral",
-            "frustration_score": 30,
-            "satisfaction_trend": "baseline",
-            "note": "skipped — no customer message available for analysis",
-        }
-    else:
-        print(f"[pipeline] Stage 1: Intent & Sentiment Analysis (turn {turn_index})")
-        intent_sentiment = _safe_run_agent(
+
+    run_sim = (not skip_simulator) and mode == "Simulator"
+
+    def _do_intent() -> dict:
+        if skip_intent:
+            print("[pipeline] Intent & Sentiment SKIPPED — no customer message to analyze")
+            return {
+                "agent": "intent_sentiment",
+                "turn_index": turn_index,
+                "intent": "general_question",
+                "emotion": "neutral",
+                "frustration_score": 30,
+                "satisfaction_trend": "baseline",
+                "note": "skipped — no customer message available for analysis",
+            }
+        print(f"[pipeline] Intent & Sentiment Analysis (turn {turn_index})")
+        result = _safe_run_agent(
             agent_name="intent_sentiment",
             agent_func=run_intent_sentiment_agent,
             session_id=session_id,
@@ -112,75 +120,24 @@ def run_pipeline(
             turn_index=turn_index,
             conversation_context=conversation_history,
         )
-        print(f"[pipeline] Intent: {intent_sentiment.get('intent')} | "
-              f"Emotion: {intent_sentiment.get('emotion')} | "
-              f"Frustration: {intent_sentiment.get('frustration_score')}")
+        print(f"[pipeline] Intent: {result.get('intent')} | "
+              f"Emotion: {result.get('emotion')} | "
+              f"Frustration: {result.get('frustration_score')}")
+        return result
 
-    # Check if intent suggests customer needs information
-    info_needing_intents = [
-        "billing_issue", "technical_problem", "refund_request",
-        "general_question", "how_to", "feature_request",
-        "account_access", "payment_dispute", "information",
-    ]
-    should_query_knowledge = not skip_intent and any(
-        keyword in str(intent_sentiment.get("intent", "")).lower()
-        for keyword in info_needing_intents
-    )
-
-    # ============================================================
-    # Stage 2: Knowledge Recommendation (conditional)
-    # ============================================================
-    knowledge_result = {
-        "agent": "knowledge_recommendation",
-        "turn_index": turn_index,
-        "results": [],
-        "note": "skipped — intent did not suggest information need",
-    }
-
-    if skip_intent:
-        print(f"[pipeline] Stage 2: Knowledge SKIPPED — no customer message available")
-        knowledge_result = {
-            "agent": "knowledge_recommendation",
-            "turn_index": turn_index,
-            "results": [],
-            "note": "no relevant knowledge found",
-        }
-    elif should_query_knowledge:
-        print(f"[pipeline] Stage 2: Knowledge Recommendation (intent: "
-              f"{intent_sentiment.get('intent')})")
-        knowledge_result = _safe_run_agent(
-            agent_name="knowledge",
-            agent_func=run_knowledge_agent,
-            session_id=session_id,
-            intent=intent_sentiment.get("intent", "general_question"),
-            persona=persona,
-            product_context=product_context,
-            query_text=customer_message_to_analyze,
-            turn_index=turn_index,
-        )
-        result_count = len(knowledge_result.get("results", []))
-        print(f"[pipeline] Knowledge: {result_count} results found")
-    else:
-        print(f"[pipeline] Stage 2: Knowledge skipped "
-              f"(intent: {intent_sentiment.get('intent')})")
-
-    # ============================================================
-    # Stage 3: Customer Simulator (Simulator Mode only)
-    # ============================================================
-    customer_simulation = {
-        "agent": "customer_simulator",
-        "turn_index": turn_index,
-        "customer_message": "",
-        "internal_frustration_level": 35,
-        "metadata": {"tone": "neutral", "language": "en"},
-        "note": "skipped — not Simulator mode",
-    }
-
-    if skip_simulator:
-        print(f"[pipeline] Stage 3: Customer Simulator SKIPPED (skip_simulator=True)")
-    elif mode == "Simulator":
-        print(f"[pipeline] Stage 3: Customer Simulator")
-        customer_simulation = _safe_run_agent(
+    def _do_simulator() -> dict:
+        if not run_sim:
+            print("[pipeline] Customer Simulator skipped (mode not Simulator or skip_simulator=True)")
+            return {
+                "agent": "customer_simulator",
+                "turn_index": turn_index,
+                "customer_message": "",
+                "internal_frustration_level": 35,
+                "metadata": {"tone": "neutral", "language": "en"},
+                "note": "skipped — not Simulator mode",
+            }
+        print(f"[pipeline] Customer Simulator (turn {turn_index})")
+        result = _safe_run_agent(
             agent_name="simulator",
             agent_func=run_simulator_agent,
             session_id=session_id,
@@ -193,44 +150,113 @@ def run_pipeline(
             conversation_history=conversation_history,
         )
         print(f"[pipeline] Simulator frustration: "
-              f"{customer_simulation.get('internal_frustration_level')}")
-    else:
-        print(f"[pipeline] Stage 3: Simulator skipped (mode: {mode})")
+              f"{result.get('internal_frustration_level')}")
+        return result
+
+    wave1 = {
+        "intent": _do_intent,
+        "simulator": _do_simulator,
+    }
+
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        wave1_futs = {key: executor.submit(fn) for key, fn in wave1.items()}
+        intent_sentiment = wave1_futs["intent"].result()
+        customer_simulation = wave1_futs["simulator"].result()
 
     # ============================================================
-    # Stage 4: Coaching & Response Suggestion (real Gemini agent)
+    # Determine whether to query the knowledge base
     # ============================================================
-    print(f"[pipeline] Stage 4: Coaching (turn {turn_index})")
-    coaching = _safe_run_agent(
-        agent_name="coaching",
-        agent_func=run_coaching_agent,
-        session_id=session_id,
-        intent=intent_sentiment.get("intent", "general_question"),
-        sentiment=intent_sentiment.get("emotion", "neutral"),
-        frustration_score=intent_sentiment.get("frustration_score"),
-        recommended_kb=knowledge_result.get("results", []),
-        customer_message=customer_message_to_analyze,
-        turn_index=turn_index,
+    info_needing_intents = [
+        "billing_issue", "technical_problem", "refund_request",
+        "general_question", "how_to", "feature_request",
+        "account_access", "payment_dispute", "information",
+    ]
+    should_query_knowledge = not skip_intent and any(
+        keyword in str(intent_sentiment.get("intent", "")).lower()
+        for keyword in info_needing_intents
     )
-    print(f"[pipeline] Coaching suggested_response "
-          f"({len(coaching.get('suggested_response', ''))} chars)")
 
     # ============================================================
-    # Stage 5: Escalation Risk Monitor (real Gemini agent, every turn)
+    # Stage 2-5: Knowledge / Coaching / Escalation (RUN IN PARALLEL)
     # ============================================================
-    print(f"[pipeline] Stage 5: Escalation Risk (turn {turn_index})")
-    escalation = _safe_run_agent(
-        agent_name="escalation",
-        agent_func=run_escalation_agent,
-        session_id=session_id,
-        intent=intent_sentiment.get("intent", "general_question"),
-        sentiment=intent_sentiment.get("emotion", "neutral"),
-        frustration_score=intent_sentiment.get("frustration_score"),
-        turn_index=turn_index,
-        customer_message=customer_message_to_analyze,
-    )
-    print(f"[pipeline] Escalation risk: {escalation.get('risk_level')} "
-          f"({escalation.get('escalation_risk')})")
+    # All three depend only on the intent result (and knowledge feeds
+    # coaching), so they are independent of each other and can run
+    # concurrently, cutting the second wave down from ~3 sequential
+    # LLM calls to a single max().
+
+    def _do_knowledge() -> dict:
+        if skip_intent:
+            print("[pipeline] Knowledge SKIPPED — no customer message available")
+            return {
+                "agent": "knowledge_recommendation",
+                "turn_index": turn_index,
+                "results": [],
+                "note": "no relevant knowledge found",
+            }
+        if not should_query_knowledge:
+            print(f"[pipeline] Knowledge skipped (intent: {intent_sentiment.get('intent')})")
+            return {
+                "agent": "knowledge_recommendation",
+                "turn_index": turn_index,
+                "results": [],
+                "note": "skipped — intent did not suggest information need",
+            }
+        print(f"[pipeline] Knowledge Recommendation (intent: {intent_sentiment.get('intent')})")
+        result = _safe_run_agent(
+            agent_name="knowledge",
+            agent_func=run_knowledge_agent,
+            session_id=session_id,
+            intent=intent_sentiment.get("intent", "general_question"),
+            persona=persona,
+            product_context=product_context,
+            query_text=customer_message_to_analyze,
+            turn_index=turn_index,
+        )
+        print(f"[pipeline] Knowledge: {len(result.get('results', []))} results found")
+        return result
+
+    def _do_coaching(recommended_kb: list[dict[str, Any]]) -> dict:
+        print(f"[pipeline] Coaching (turn {turn_index})")
+        result = _safe_run_agent(
+            agent_name="coaching",
+            agent_func=run_coaching_agent,
+            session_id=session_id,
+            intent=intent_sentiment.get("intent", "general_question"),
+            sentiment=intent_sentiment.get("emotion", "neutral"),
+            frustration_score=intent_sentiment.get("frustration_score"),
+            recommended_kb=recommended_kb,
+            customer_message=customer_message_to_analyze,
+            turn_index=turn_index,
+        )
+        print(f"[pipeline] Coaching suggested_response "
+              f"({len(result.get('suggested_response', ''))} chars)")
+        return result
+
+    def _do_escalation() -> dict:
+        print(f"[pipeline] Escalation Risk (turn {turn_index})")
+        result = _safe_run_agent(
+            agent_name="escalation",
+            agent_func=run_escalation_agent,
+            session_id=session_id,
+            intent=intent_sentiment.get("intent", "general_question"),
+            sentiment=intent_sentiment.get("emotion", "neutral"),
+            frustration_score=intent_sentiment.get("frustration_score"),
+            turn_index=turn_index,
+            customer_message=customer_message_to_analyze,
+        )
+        print(f"[pipeline] Escalation risk: {result.get('risk_level')} "
+              f"({result.get('escalation_risk')})")
+        return result
+
+    # Knowledge can run in parallel with escalation; coaching needs the
+    # knowledge result, so we run knowledge + escalation concurrently first,
+    # then coaching once knowledge is available.
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        knowledge_fut = executor.submit(_do_knowledge)
+        escalation = executor.submit(_do_escalation).result()
+        knowledge_result = knowledge_fut.result()
+
+    coaching = _do_coaching(knowledge_result.get("results", []))
 
     # ============================================================
     # Build and return the combined pipeline result

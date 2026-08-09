@@ -14,6 +14,7 @@ from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
+from app.agents.simulator_agent import run_simulator_agent
 from app.core.config import settings
 from app.orchestration.pipeline import run_pipeline
 from app.services.mongo import mongo
@@ -73,23 +74,27 @@ def start_simulator(req: SimulatorStartRequest):
     effective_scenario = session.get("scenario") or req.scenario
     effective_persona = session.get("persona") or req.persona
 
-    pipeline_result = run_pipeline(
+# Fast session start: call the simulator agent DIRECTLY (ONE LLM call)
+    # instead of the full 5-agent pipeline. The full pipeline is only needed
+    # once a turn is submitted (/conversation/turn). Previously this endpoint
+    # ran the entire pipeline just to produce a welcome message, which made
+    # Live Console session creation dramatically slower than Session Config.
+    sim_result = run_simulator_agent(
         session_id=req.session_id,
         mode=effective_mode,
-        input_message="",
         product_context=effective_context,
         scenario=effective_scenario,
         persona=effective_persona,
+        user_agent_message="",
         turn_index=0,
+        conversation_history=None,
     )
 
-    customer_msg = pipeline_result.get("customer_simulation", {}).get(
+    customer_msg = sim_result.get(
         "customer_message",
         "Hi, I need some help with an issue I'm having.",
     )
-    frustration_level = pipeline_result.get("customer_simulation", {}).get(
-        "internal_frustration_level", 35
-    )
+    frustration_level = sim_result.get("internal_frustration_level", 35)
 
     # NOTE: We do NOT persist this welcome message to MongoDB here. Doing so
     # produced DUPLICATE/garbage customer message documents (one from
@@ -97,7 +102,7 @@ def start_simulator(req: SimulatorStartRequest):
     # turn 1). The single writer for customer messages is /conversation/turn;
     # the welcome message is returned to the frontend for display and then the
     # first turn persists the real flow.
-    first_turn_index = pipeline_result.get("customer_simulation", {}).get("turn_index", 1)
+    first_turn_index = sim_result.get("turn_index", 1)
 
     welcome = {
         "role": "customer",

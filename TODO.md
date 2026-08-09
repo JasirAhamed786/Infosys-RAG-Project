@@ -1,7 +1,16 @@
-# Task: Fix Live Console freeze after one turn
+# Task: Fix Live Console freeze + latency, and redesign coaching/escalation UI
 
-- [x] Analyze root cause (typewriter effect self-cancels, leaving `isTyping` stuck true)
-- [x] Create fix plan and get approval
-- [x] Fix typewriter effect in `frontend/src/pages/LiveConsole.tsx` (deps `[messages]` + token ref + added `typingGenRef`)
-- [x] Verify/final build check (TS errors cleared)
+## Part A — Backend performance (keep versatile models)
+- [x] Parallelize pipeline agent stages (`backend/app/orchestration/pipeline.py`)
+- [x] Fast-track `start_simulator` to call simulator agent directly (`backend/app/routers/simulator.py`)
+
+## Part B — Frontend stability
+- [x] Defensive remount reset for typewriter state in `LiveConsole.tsx` (nav-return freeze)
+
+## Part C — Professional UI
+- [x] Redesign `CoachingFeedPlaceholder.tsx`
+- [x] Redesign `EscalationAlertsPlaceholder.tsx`
+
+## Verification
+- [x] Backend Python syntax check
 

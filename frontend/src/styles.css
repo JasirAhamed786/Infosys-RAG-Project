@@ -2,7 +2,10 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Premium global polish */
+/* ─────────────────────────────────────────────────────────────
+   Clario global polish — flat, calm, token-driven.
+   No decorative gradients, no glassmorphism, no ambient motion.
+   ───────────────────────────────────────────────────────────── */
 
 :root {
   color-scheme: light;
@@ -17,70 +20,38 @@ body {
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  background-color: #fafbfc;
+  color: #101828;
+  font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
 }
 
-/* Animated background (subtle) */
+/* Flat app background — plain cool near-white, no gradient/grid/blur */
 .app-bg {
   position: fixed;
   inset: 0;
   z-index: -1;
-  background:
-    radial-gradient(1200px circle at 10% 10%, rgba(59, 130, 246, 0.14), transparent 55%),
-    radial-gradient(1000px circle at 90% 20%, rgba(16, 185, 129, 0.12), transparent 50%),
-    radial-gradient(900px circle at 60% 90%, rgba(99, 102, 241, 0.10), transparent 55%),
-    linear-gradient(180deg, #f8fafc 0%, #ffffff 70%);
+  background-color: #fafbfc;
 }
 
-.app-bg::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background-image: linear-gradient(to right, rgba(148, 163, 184, 0.22) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(148, 163, 184, 0.18) 1px, transparent 1px);
-  background-size: 64px 64px;
-  opacity: 0.12;
-  transform: translateZ(0);
+/* Surface card helper — flat white, 1px border, 8px radius */
+.surface {
+  background-color: #ffffff;
+  border: 1px solid #e4e7ec;
+  border-radius: 8px;
 }
 
-.app-bg::after {
-  content: '';
-  position: absolute;
-  inset: -40px;
-  background: radial-gradient(circle at 20% 30%, rgba(59, 130, 246, 0.18), transparent 40%),
-    radial-gradient(circle at 75% 25%, rgba(16, 185, 129, 0.16), transparent 38%),
-    radial-gradient(circle at 55% 80%, rgba(99, 102, 241, 0.14), transparent 45%);
-  filter: blur(22px);
-  opacity: 0.9;
-  animation: bgFloat 10s ease-in-out infinite;
+/* Data / monospace default */
+.font-data {
+  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
 
-@keyframes bgFloat {
-  0% {
-    transform: translate3d(0px, 0px, 0px) scale(1);
-  }
-  50% {
-    transform: translate3d(0px, 16px, 0px) scale(1.02);
-  }
-  100% {
-    transform: translate3d(0px, 0px, 0px) scale(1);
-  }
-}
-
-/* Glass + card helpers */
-.glass {
-  background: rgba(255, 255, 255, 0.72);
-  border: 1px solid rgba(148, 163, 184, 0.28);
-  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
-  backdrop-filter: blur(10px);
-}
-
-/* Entrance utilities */
+/* Calm entrance utilities (subtle, short, no heavy motion) */
 .fade-in {
-  animation: fadeIn 380ms ease-out both;
+  animation: fadeIn 280ms ease-out both;
 }
 
 .fade-in-up {
-  animation: fadeInUp 450ms ease-out both;
+  animation: fadeInUp 320ms ease-out both;
 }
 
 @keyframes fadeIn {
@@ -95,18 +66,43 @@ body {
 @keyframes fadeInUp {
   from {
     opacity: 0;
-    transform: translateY(10px);
+    transform: translateY(6px);
   }
   to {
     opacity: 1;
-    transform: translateY(0px);
+    transform: translateY(0);
   }
 }
 
-/* Subtle focus glow */
+/* Focus ring re-pointed to the accent blue */
 .focus-glow:focus {
   outline: none;
-  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15);
+  box-shadow: 0 0 0 3px rgba(46, 90, 172, 0.18);
 }
 
+/* Custom scrollbar (subtle, desktop) */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background-color: #d3d9e3;
+  border-radius: 8px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background-color: #b9c1cf;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
 
+/* Hide scrollbar utility (used by nav) */
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
