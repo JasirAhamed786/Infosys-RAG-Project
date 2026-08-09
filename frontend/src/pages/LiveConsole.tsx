@@ -67,6 +67,12 @@ export default function LiveConsole() {
   const [isTyping, setIsTyping] = useState(false)
 
 const messagesEndRef = useRef<HTMLDivElement>(null)
+  const messagesScrollRef = useRef<HTMLDivElement>(null)
+  // Tracks whether the user is near the bottom of the chat. Auto-scroll only
+  // fires when a NEW message is appended AND the user was already near the
+  // bottom — the standard "stick to bottom" chat pattern (Bug 2).
+  const isNearBottomRef = useRef(true)
+  const lastMessageCountRef = useRef(0)
 
   // ─── Defensive remount reset ──────────────────────────────────
   useEffect(() => {
@@ -79,12 +85,31 @@ const messagesEndRef = useRef<HTMLDivElement>(null)
     }
   }, [])
 
-  // ─── Auto-Scroll ──────────────────────────────────────────────
+  // ─── Auto-Scroll ("stick to bottom") ──────────────────────────
+  // Only auto-scroll when the number of messages GROWS (a new message was
+  // appended) and the user was near the bottom when it arrived. Typewriter
+  // ticks (typingText / isTyping) no longer trigger a forced scroll.
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({
-      behavior: isTyping ? 'auto' : 'smooth',
-    })
-  }, [messages, typingText, isTyping])
+    const scrollEl = messagesScrollRef.current
+    if (!scrollEl) return
+
+    const messageCount = messages.length
+    const grew = messageCount > lastMessageCountRef.current
+    lastMessageCountRef.current = messageCount
+
+    if (grew && isNearBottomRef.current) {
+      scrollEl.scrollTo({ top: scrollEl.scrollHeight, behavior: 'smooth' })
+    }
+  }, [messages])
+
+  // ─── Scroll position tracking ─────────────────────────────────
+  function handleChatScroll(e: React.UIEvent<HTMLDivElement>) {
+    const el = e.currentTarget
+    const distanceFromBottom =
+      el.scrollHeight - el.scrollTop - el.clientHeight
+    // Within ~80px of the bottom counts as "near bottom".
+    isNearBottomRef.current = distanceFromBottom < 80
+  }
 
 // ─── Typewriter effect ──
   useEffect(() => {
@@ -461,8 +486,12 @@ className="w-full inline-flex items-center justify-center rounded-lg brand-grad 
                 )}
               </div>
 
-              {/* Scrollable Messages Area */}
-              <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4 bg-gradient-to-b from-[#f3f8ff] via-[#f4fafa] to-[#eef7f3]">
+{/* Scrollable Messages Area */}
+              <div
+                ref={messagesScrollRef}
+                onScroll={handleChatScroll}
+                className="flex-1 overflow-y-auto px-5 py-4 space-y-4 bg-gradient-to-b from-[#f3f8ff] via-[#f4fafa] to-[#eef7f3]"
+              >
                 {messages.length === 0 && !isTyping && (
                   <div className="flex items-center justify-center h-full">
                     <div className="text-center">
