@@ -90,7 +90,7 @@ export default function Home() {
         variants={item}
         className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 md:p-10 shadow-sm"
       >
-        <div className="absolute inset-x-0 top-0 h-1.5 brand-grad shimmer" aria-hidden="true" />
+<div className="absolute inset-x-0 top-0 h-1.5 brand-grad shimmer rounded-t-2xl" aria-hidden="true" />
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
 <div>
             <div className="flex items-center gap-3">
