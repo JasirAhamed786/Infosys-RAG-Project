@@ -222,11 +222,15 @@ return (
 
         {/* Upload Action Bar */}
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 pt-2">
-          <button
+<button
             type="button"
             onClick={onUpload}
             disabled={loading || !state.file}
-className="inline-flex items-center justify-center rounded-lg brand-grad px-6 py-3.5 text-sm font-medium text-white hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-[#0E7490]/40 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
+            className={`inline-flex items-center justify-center rounded-lg px-6 py-3.5 text-sm font-medium text-white transition-all ${
+              loading || !state.file
+                ? 'bg-[#B9C1CF] cursor-not-allowed opacity-100'
+                : 'bg-gradient-to-r from-[#0E2B6C] via-[#0E7490] to-[#0F9D8E] shadow-[0_8px_20px_rgba(14,116,144,0.35)] hover:shadow-[0_10px_24px_rgba(14,116,144,0.45)] hover:brightness-110 focus:outline-none focus:ring-2 focus:ring-[#0E7490]/40'
+            }`}
           >
             {loading ? (
               <>
