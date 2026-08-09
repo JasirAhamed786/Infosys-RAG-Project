@@ -88,15 +88,11 @@ return (
                   <option value="Roleplay">Roleplay (Manual Interactive Practice)</option>
                   <option value="Live Assist">Live Assist (Real-time Telemetry & Replay)</option>
                 </select>
-                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-[#667085]">
+<div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-[#667085]">
                   <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                   </svg>
                 </div>
-              </div>
-              <div className="flex items-center gap-2 text-xs text-[#667085] mt-2.5">
-                <span className="inline-block h-1.5 w-1.5 rounded-full bg-[#0E2B6C]" />
-                {form.mode}
               </div>
             </div>
           </div>
