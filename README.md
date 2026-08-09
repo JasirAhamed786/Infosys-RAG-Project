@@ -1,6 +1,6 @@
 
 <div align="center">
-### Clario
+# **Clario**
  
 ### AI-Powered Real-Time Customer Support Coaching Assistant
  
