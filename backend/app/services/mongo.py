@@ -31,6 +31,13 @@ class MongoService:
             self.reports = self.db["reports"]
             self.knowledge_docs = self.db["knowledge_docs"]
 
+            # Clearly log WHICH database + collection stores sessions so the user
+            # can find them in MongoDB Compass (they may otherwise be looking at a
+            # different DB such as the default "test" database).
+            print(f"[mongo] Writing to database '{self.db.name}' -> collection "
+                  f"'sessions' ({self.sessions.name}). Look in '{self.db.name}' "
+                  f"in MongoDB Compass to see your created sessions.")
+
     def log_mongo_connection(self):
         self.connect()
         try:

@@ -329,14 +329,16 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         dispatch({ type: 'TURN_PENDING' })
 
         // Safety timeout: if the backend /conversation/turn request hangs (e.g. a
-        // slow Groq call or a stalled pipeline), we must NOT leave turnStatus in
-        // "pending" forever — that disables the reply input (can't type/send).
-        // We race the request against a 30s timer; whichever settles first wins.
+        // slow LLM call or a stalled pipeline), we must NOT leave turnStatus in
+        // "pending" forever — that disables the reply input (can't type/send),
+        // which is exactly the reported freeze after a couple of turns. We race
+        // the request against a generous 120s timer; whichever settles first wins.
+        // On timeout we dispatch TURN_ERROR so the input reliably re-enables.
         let timeoutId: ReturnType<typeof setTimeout> | undefined
         const timeoutPromise = new Promise<never>((_, reject) => {
           timeoutId = setTimeout(() => {
-            reject(new Error('Turn timed out after 30s — the backend did not respond. Please try again.'))
-          }, 30_000)
+            reject(new Error('Turn timed out after 120s — the backend did not respond. Please try again.'))
+          }, 120_000)
         })
 
         try {
@@ -365,10 +367,20 @@ export function SessionProvider({ children }: { children: ReactNode }) {
           const customerTurnIndex =
             res.turn_index ?? customerSim.turn_index ?? state.turnCount + 1
 
-          // Convert coaching (pipeline returns { coaching_tips, suggested_response }).
+          // Convert coaching. The pipeline returns { coaching_tips,
+          // suggested_response, tone_feedback, communication_tips, confidence }.
+          // Prefer coaching_tips, but fall back to communication_tips so the
+          // coaching panel always has content regardless of which key the
+          // backend produced.
+          const rawCoaching = res.coaching as (CoachingSuggestion & { coaching_tips?: string[] }) | null
+          const coachingTips =
+            rawCoaching?.coaching_tips?.length
+              ? rawCoaching.coaching_tips
+              : (rawCoaching?.communication_tips ?? [])
+
           const coaching: CoachingSuggestion | null = res.coaching
             ? {
-                coaching_tips: res.coaching.coaching_tips ?? [],
+                coaching_tips: coachingTips,
                 suggested_response: res.coaching.suggested_response ?? '',
                 tone_feedback: res.coaching.tone_feedback,
                 communication_tips: res.coaching.communication_tips,

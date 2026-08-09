@@ -59,8 +59,12 @@ export default function LiveConsole() {
   // Reply input box (page-local, deliberately not in context)
   const [agentInput, setAgentInput] = useState('')
 
-  // Client-side typewriter over the complete customer message (not backend streaming)
+// Client-side typewriter over the complete customer message (not backend streaming)
   const typingRef = useRef<number | null>(null)
+  // Generation token: bumped on every new typewriter animation so any in-flight
+  // timer from a previous animation is invalidated instead of resuming and
+  // corrupting the current one.
+  const typingGenRef = useRef<number>(0)
   // Identity ("turnIndex|content-prefix") of the most recent customer message that
   // has ALREADY been animated. We key the animation on the identity of the latest
   // customer message — NOT a running count — so it reliably re-arms on every genuine
@@ -78,14 +82,19 @@ export default function LiveConsole() {
     })
   }, [messages, typingText, isTyping])
 
-  // ─── Typewriter effect: reveal the latest NEW customer message word-by-word ──
+// ─── Typewriter effect: reveal the latest NEW customer message word-by-word ──
   // Pure frontend visual; no backend calls. Runs only when a customer message with a
   // NEW identity appears in context (from submitTurn's single conversationTurn call).
-  // Key dependencies: messages + isTyping. We do NOT depend on typingText, so typing
-  // state updates do not re-trigger this effect.
+  //
+  // IMPORTANT: this effect deliberately depends ONLY on `messages` — NOT on
+  // `isTyping`. Previously `isTyping` was in the dependency array, which caused a
+  // fatal self-cancel: calling `setIsTyping(true)` re-ran the effect, its cleanup
+  // cleared the just-scheduled animation timer, and the effect bailed via the
+  // `if (isTyping) return` guard. That left `isTyping` stuck `true` forever, which
+  // permanently disabled the reply input/send button (the reported freeze after
+  // one turn). Now a generation token invalidates stale timers instead, so the
+  // animation always completes and `isTyping` reliably returns to `false`.
   useEffect(() => {
-    if (isTyping) return // already animating
-
     // Find the most recent customer message and compute a stable identity.
     const lastCustomer = [...messages].reverse().find((m) => m.role === 'customer')
     if (!lastCustomer) return
@@ -97,6 +106,9 @@ export default function LiveConsole() {
     // re-animating on unrelated re-renders like latestIntentSentiment arriving).
     if (lastAnimatedIdRef.current === identity) return
 
+    // Bump the generation token so any in-flight timer from a previous animation
+    // is invalidated the moment we start a new one.
+    const gen = (typingGenRef.current += 1)
     // Mark it as animated BEFORE starting so re-entry is blocked during the loop.
     lastAnimatedIdRef.current = identity
 
@@ -106,17 +118,33 @@ export default function LiveConsole() {
     let idx = 0
 
     const tick = () => {
+      if (typingGenRef.current !== gen) return // stale animation — abort
       idx += 1
       setTypingText(words.slice(0, idx).join(' '))
       if (idx < words.length) {
         typingRef.current = window.setTimeout(tick, 28)
       } else {
         setIsTyping(false)
+        setTypingText('')
         typingRef.current = null
       }
     }
     typingRef.current = window.setTimeout(tick, 50)
-  }, [messages, isTyping])
+
+    // Safety: never let the typewriter lock the input forever. For very long
+    // customer messages (or if a timer is lost), force isTyping=false shortly
+    // after the animation should have finished so the reply box re-enables.
+    const forceDone = window.setTimeout(() => {
+      if (typingGenRef.current !== gen) return // stale animation — ignore
+      setIsTyping(false)
+      setTypingText('')
+    }, words.length * 28 + 1500)
+    return () => {
+      if (typingRef.current) window.clearTimeout(typingRef.current)
+      window.clearTimeout(forceDone)
+    }
+    // Intentionally only `messages`: re-running on `isTyping` caused the freeze.
+  }, [messages])
 
   // Cleanup the typewriter timer on unmount
   useEffect(() => {
@@ -722,6 +750,17 @@ export default function LiveConsole() {
                       <div className="w-full rounded-xl bg-slate-50 border border-slate-200 p-4 text-left">
                         <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">Suggested Response</div>
                         <p className="text-[13px] text-slate-800 leading-relaxed">{latestCoachingSuggestion.suggested_response}</p>
+                        <button
+                          type="button"
+                          onClick={() => setAgentInput(latestCoachingSuggestion.suggested_response ?? '')}
+                          disabled={turnStatus === 'pending' || isTyping}
+                          className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-1 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                        >
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+                          </svg>
+                          Use this reply
+                        </button>
                       </div>
                     )}
                   </>

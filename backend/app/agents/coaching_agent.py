@@ -103,6 +103,9 @@ Generate a coaching suggestion. Output STRICT JSON ONLY."""
         "suggested_response": "",
         "tone_feedback": "",
         "communication_tips": [],
+        # Alias used by the frontend (LiveConsole / CoachingFeed) — the pipeline
+        # returns this as the array of coaching tips.
+        "coaching_tips": [],
         "confidence": 0.0,
     }
 
@@ -139,6 +142,9 @@ Generate a coaching suggestion. Output STRICT JSON ONLY."""
         elif isinstance(raw_tips, str) and raw_tips.strip():
             result["communication_tips"] = [raw_tips.strip()]
 
+        # Keep the frontend alias in sync.
+        result["coaching_tips"] = result["communication_tips"]
+
         try:
             raw_conf = float(gres.get("confidence", 0.0))
             result["confidence"] = max(0.0, min(1.0, raw_conf))
@@ -161,7 +167,7 @@ def _fallback(
     """A safe, non-crashing result ONLY used on real API errors."""
     result["suggested_response"] = (
         f"I understand your concern regarding {intent}. Let me look into the details "
-        "and get you a clear answer as soon as possible."
+"and get you a clear answer as soon as possible."
     )
     result["tone_feedback"] = "Empathetic and reassuring, appropriate for a support response."
     result["communication_tips"] = [
@@ -169,6 +175,7 @@ def _fallback(
         "Ask a clarifying question to better understand the issue.",
         "Provide clear next steps and set expectations.",
     ]
+    result["coaching_tips"] = result["communication_tips"]
     result["confidence"] = 0.3
     result["note"] = f"fallback used (sentiment={sentiment}) — Groq unavailable or errored"
     return result

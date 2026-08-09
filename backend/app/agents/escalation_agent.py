@@ -28,7 +28,12 @@ from __future__ import annotations
 from typing import Any
 
 from app.core.config import settings
-from app.utils.llm_client import gemini_client
+
+# The escalation agent previously used the Gemini client with
+# GEMINI_KNOWLEDGE_MODEL, which was not a valid/stable Gemini model name and
+# caused constant fallbacks (escalation never "worked continuously"). Groq
+# is reliably configured with a valid model, so we use Groq here instead.
+from app.utils.llm_client import groq_client
 
 # Strict JSON-only system prompt to enforce the structured escalation output.
 ESCALATION_SYSTEM_PROMPT = """You are an Escalation Risk Monitor agent for an AI customer support coaching system.
@@ -102,13 +107,13 @@ Assess escalation risk. Output STRICT JSON ONLY."""
         "alert_triggered": False,
     }
 
-    if not gemini_client.api_key:
-        print("[escalation_agent] WARNING: GEMINI_API_KEY not set. Returning fallback.")
+    if not groq_client.api_key:
+        print("[escalation_agent] WARNING: GROQ_API_KEY not set. Returning fallback.")
         return _fallback(result, intent, sentiment, frustration_score)
 
     try:
-        gres = gemini_client.generate_json(
-            model=settings.GEMINI_KNOWLEDGE_MODEL,
+        gres = groq_client.generate_json(
+            model=settings.GROQ_INTENT_MODEL,
             system_prompt=ESCALATION_SYSTEM_PROMPT,
             user_prompt=user_prompt,
             temperature=0.2,

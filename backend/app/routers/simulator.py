@@ -91,18 +91,13 @@ def start_simulator(req: SimulatorStartRequest):
         "internal_frustration_level", 35
     )
 
-    now = dt.datetime.utcnow()
+    # NOTE: We do NOT persist this welcome message to MongoDB here. Doing so
+    # produced DUPLICATE/garbage customer message documents (one from
+    # start_simulator at turn 1, another from the first /conversation/turn at
+    # turn 1). The single writer for customer messages is /conversation/turn;
+    # the welcome message is returned to the frontend for display and then the
+    # first turn persists the real flow.
     first_turn_index = pipeline_result.get("customer_simulation", {}).get("turn_index", 1)
-    
-    mongo.messages.insert_one({
-        "_id": str(uuid4()),
-        "session_id": req.session_id,
-        "turn_index": first_turn_index,
-        "role": "customer",
-        "content": customer_msg,
-        "created_at": now,
-        "frustration_level": frustration_level,
-    })
 
     welcome = {
         "role": "customer",
