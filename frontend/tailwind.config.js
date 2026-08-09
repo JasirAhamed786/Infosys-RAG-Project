@@ -12,12 +12,23 @@ export default {
         // Text
         ink: '#101828',         // primary text
         inkmuted: '#667085',    // secondary / muted text
-        // Accent — deep corporate navy (ACCA-style, professional/trustworthy)
+// Accent — deep corporate navy (ACCA-style, professional/trustworthy)
         accent: {
           DEFAULT: '#0E2B6C',
           hover: '#0A2154',
           soft: '#E9EDF6',      // tinted active / selected surface
           bordsoft: '#C7D2E8',  // soft accent border
+        },
+        // Brand — blue → teal/green gradient (professional, attractive)
+        brand: {
+          blue: '#0E2B6C',
+          blue2: '#1D4ED8',
+          teal: '#0E7490',
+          green: '#047857',
+          from: '#123B8F',
+          via: '#0E7490',
+          to: '#059669',
+          soft: '#EEF6F6',      // very light mint-tinted surface
         },
         // Semantic status — status only, never decoration
         success: {
@@ -36,8 +47,9 @@ export default {
           bordsoft: '#F6B5B0',
         },
       },
-      fontFamily: {
+fontFamily: {
         sans: ['Inter', 'ui-sans-serif', 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', 'sans-serif'],
+        display: ['"Space Grotesk"', 'Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
         mono: ['"JetBrains Mono"', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'Consolas', 'monospace'],
       },
       spacing: {

@@ -1,396 +1,232 @@
 import React from 'react'
 import { NavLink } from 'react-router-dom'
+import { motion } from 'framer-motion'
 
-type BadgeTone = 'success' | 'accent' | 'neutral'
-
-type TelemetryMetric = {
-  title: string
-  subtitle: string
-  badgeText: string
-  tone: BadgeTone
-}
-
-const METRICS: TelemetryMetric[] = [
-  {
-    title: 'ChromaDB Connected',
-    subtitle: 'Cosine Similarity Ready • Vector index healthy',
-    badgeText: '100% Health',
-    tone: 'success',
-  },
-  {
-    title: 'Embeddings Pipeline',
-    subtitle: 'Sub-millisecond readiness for new ingestion cycles',
-    badgeText: 'Active • Low latency',
-    tone: 'accent',
-  },
-  {
-    title: 'Retrieval Accuracy',
-    subtitle: '98.4% correct retrieval across knowledge chunks',
-    badgeText: '98.4% Score',
-    tone: 'neutral',
-  },
-]
-
-function toneClasses(tone: BadgeTone): { pill: string; dot: string; bar: string } {
-  switch (tone) {
-    case 'success':
-      return {
-        pill: 'bg-[#E7F7EF] border-[#B7E8CF] text-[#0F6E44]',
-        dot: 'bg-[#12B76A]',
-        bar: 'bg-[#12B76A]',
-      }
-    case 'accent':
-      return {
-        pill: 'bg-[#E9EDF6] border-[#C7D2E8] text-[#0E2B6C]',
-        dot: 'bg-[#0E2B6C]',
-        bar: 'bg-[#0E2B6C]',
-      }
-    default:
-      return {
-        pill: 'bg-[#F2F4F7] border-[#E4E7EC] text-[#344054]',
-        dot: 'bg-[#667085]',
-        bar: 'bg-[#667085]',
-      }
-  }
-}
-
-function ProgressBar(props: { value: number; labelLeft: string; labelRight: string; tone: BadgeTone }) {
-  const { value, labelLeft, labelRight, tone } = props
-  const { dot, pill, bar } = toneClasses(tone)
-  const v = Math.max(0, Math.min(100, value))
-
-  return (
-    <div className="space-y-2">
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2 min-w-0">
-          <span className={`h-2 w-2 rounded-full ${dot}`} />
-          <span className="text-sm font-medium text-[#101828] truncate">{labelLeft}</span>
-        </div>
-        <span className={`shrink-0 rounded-full border px-2.5 py-0.5 text-[11px] font-semibold ${pill}`}>
-          {labelRight}
-        </span>
-      </div>
-
-      <div className="relative h-2 rounded-full bg-[#F2F4F7] overflow-hidden border border-[#E4E7EC]">
-        <div
-          className={`absolute inset-y-0 left-0 rounded-full ${bar}`}
-          style={{ width: `${v}%` }}
-        />
-      </div>
-    </div>
-  )
-}
-
-function AccuracyDial(props: { value: number }) {
-  const { value } = props
-  const radius = 34
-  const stroke = 7
-  const normalizedRadius = radius - stroke / 2
-  const circumference = normalizedRadius * 2 * Math.PI
-  const clamped = Math.max(0, Math.min(100, value))
-  const offset = circumference - (clamped / 100) * circumference
-
-  return (
-    <div className="flex items-center gap-4">
-      <div className="relative w-24 h-24 shrink-0">
-        <svg className="absolute inset-0 w-24 h-24" viewBox="0 0 100 100" aria-hidden="true">
-          <circle
-            cx="50"
-            cy="50"
-            r={normalizedRadius}
-            strokeWidth={stroke}
-            stroke="#E4E7EC"
-            fill="none"
-          />
-          <circle
-            cx="50"
-            cy="50"
-            r={normalizedRadius}
-            strokeWidth={stroke}
-            stroke="#0E2B6C"
-            fill="none"
-            strokeLinecap="round"
-            strokeDasharray={circumference}
-            strokeDashoffset={offset}
-            transform="rotate(-90 50 50)"
-          />
-        </svg>
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="text-center">
-            <div className="text-lg font-semibold text-[#101828] leading-none">{clamped.toFixed(1)}%</div>
-            <div className="text-[10px] font-medium tracking-wide uppercase text-[#667085]">Accuracy</div>
-          </div>
-        </div>
-      </div>
-
-      <div className="flex-1 rounded-[8px] border border-[#E4E7EC] bg-white p-3.5">
-        <div className="flex items-center justify-between gap-3">
-          <div className="text-[11px] font-semibold uppercase tracking-wider text-[#667085]">Confidence band</div>
-          <span className="rounded-full bg-[#E7F7EF] border border-[#B7E8CF] px-2.5 py-0.5 text-[11px] font-semibold text-[#0F6E44]">
-            Stable
-          </span>
-        </div>
-        <div className="mt-2.5">
-          <ProgressBar
-            value={clamped}
-            labelLeft="Top-k retrieval"
-            labelRight={`${clamped.toFixed(1)}%`}
-            tone="success"
-          />
-        </div>
-      </div>
-    </div>
-  )
-}
-
-const WORKFLOW: { to: string; step: string; tag: string; title: string; body: string; cta: string }[] = [
+const STEPS: { icon: React.ReactNode; title: string; body: string; cta: string; to: string }[] = [
   {
     to: '/session',
-    step: 'Step 1',
-    tag: 'Simulator • Manual • Replay',
-    title: 'Configure Coaching Environment',
-    body: 'Choose how sessions run: Simulator, Manual roleplay, or Replay mode—then generate a coaching context for real-time guidance.',
-    cta: 'Go to Session Setup',
+    title: 'Configure',
+    body: 'Set up a simulator, roleplay, or replay coaching environment tailored to your business context.',
+    cta: 'Start setup',
+    icon: (
+      <svg className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+      </svg>
+    ),
   },
   {
     to: '/knowledge',
-    step: 'Step 2',
-    tag: 'PDF text • Chunking',
-    title: 'Upload Knowledge Base',
-    body: 'Ingest PDFs by chunking text, embedding with a compact model, and indexing via ChromaDB for fast semantic retrieval.',
-    cta: 'Go to RAG Ingestion',
+    title: 'Ingest Knowledge',
+    body: 'Upload training documents and let RAG embed and index them for fast, accurate semantic retrieval.',
+    cta: 'Upload docs',
+    icon: (
+      <svg className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+      </svg>
+    ),
   },
   {
     to: '/console',
-    step: 'Step 3',
-    tag: 'Telemetry • Suggestions',
-    title: 'Launch Console',
-    body: 'Activate real-time agent telemetry and response suggestions—watch coaching decisions reflected in live output.',
-    cta: 'Go to Live Coaching',
+    title: 'Coach Live',
+    body: 'Launch the console and watch real-time telemetry, intent analysis, and coaching suggestions in action.',
+    cta: 'Open console',
+    icon: (
+      <svg className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+      </svg>
+    ),
   },
 ]
 
-export default function Home() {
-  return (
-    <div className="space-y-8">
-      {/* Hero */}
-      <section className="surface p-6 md:p-8">
-        <div className="inline-flex items-center gap-2 rounded-full border border-[#C7D2E8] bg-[#E9EDF6] px-3.5 py-1.5 text-xs font-medium text-[#0E2B6C]">
-          <span className="h-1.5 w-1.5 rounded-full bg-[#0E2B6C]" />
-          System Status: Coaching Ready
-        </div>
+const FEATURES: { title: string; body: string; grad: string; icon: React.ReactNode }[] = [
+  {
+    title: 'Multi-Agent Pipeline',
+    body: 'Intent, sentiment, knowledge retrieval, coaching, and escalation agents working in concert.',
+    grad: 'panel-blue',
+    icon: (
+      <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+      </svg>
+    ),
+  },
+  {
+    title: 'RAG Retrieval',
+    body: 'Semantic search over your knowledge base with transparent, source-linked reasoning.',
+    grad: 'panel-teal',
+    icon: (
+      <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M17 10a7 7 0 11-14 0 7 7 0 0114 0z" />
+      </svg>
+    ),
+  },
+  {
+    title: 'Live Telemetry',
+    body: 'Real-time frustration tracking, satisfaction trends, and escalation risk scoring per turn.',
+    grad: 'panel-green',
+    icon: (
+      <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+      </svg>
+    ),
+  },
+]
 
-        <h1 className="mt-4 text-3xl md:text-4xl font-semibold tracking-tight text-[#101828] leading-tight">
-          Clario AI Command Center
-        </h1>
-
-        <p className="mt-3 text-sm md:text-base text-[#667085] max-w-2xl leading-relaxed">
-          A decoupled RAG architecture with multi-agent simulation coaches customer support agents in real time,
-          turning knowledge retrieval and live telemetry into actionable guidance.
-        </p>
-
-        <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <div className="rounded-[8px] border border-[#E4E7EC] bg-white p-4">
-            <div className="text-xs font-medium text-[#667085]">Ops Architecture</div>
-            <div className="mt-1 text-lg font-semibold text-[#101828]">RAG + Agents</div>
-          </div>
-          <div className="rounded-[8px] border border-[#E4E7EC] bg-white p-4">
-            <div className="text-xs font-medium text-[#667085]">Coaching Pipeline</div>
-            <div className="mt-1 text-lg font-semibold text-[#101828]">Live Telemetry</div>
-          </div>
-          <div className="rounded-[8px] border border-[#E4E7EC] bg-white p-4">
-            <div className="text-xs font-medium text-[#667085]">Design System</div>
-            <div className="mt-1 text-lg font-semibold text-[#101828]">Enterprise Tokens</div>
-          </div>
-        </div>
-      </section>
-
-      {/* Quick Start */}
-      <section className="surface p-6 md:p-8">
-        <div className="flex items-start justify-between gap-4 flex-wrap">
-          <div>
-            <h2 className="text-xl md:text-2xl font-semibold tracking-tight text-[#101828]">Quick-Start Workflow</h2>
-            <p className="mt-2 text-sm text-[#667085] max-w-2xl">
-              Configure the environment, ingest knowledge with RAG, and activate the live coaching console.
-            </p>
-          </div>
-          <div className="rounded-[8px] border border-[#E4E7EC] bg-white px-4 py-2 text-xs font-medium text-[#667085]">
-            Getting started • 3 steps
-          </div>
-        </div>
-
-        <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-          {WORKFLOW.map((item) => (
-            <NavLink key={item.to} to={item.to} className="block group">
-              <div className="h-full rounded-[8px] border border-[#E4E7EC] bg-white p-5 flex flex-col transition-shadow duration-200 shadow-card group-hover:shadow-cardh">
-                <div className="flex items-center justify-between gap-3">
-                  <span className="inline-flex items-center rounded-full border border-[#C7D2E8] bg-[#E9EDF6] px-3 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-[#0E2B6C]">
-                    {item.step}
-                  </span>
-                  <span className="rounded-full bg-[#F2F4F7] px-3 py-0.5 text-xs font-medium text-[#667085]">
-                    {item.tag}
-                  </span>
-                </div>
-
-                <h3 className="mt-4 text-base font-semibold text-[#101828]">{item.title}</h3>
-                <p className="mt-2 text-sm text-[#667085] leading-relaxed">{item.body}</p>
-
-                <div className="mt-5 flex items-center justify-between pt-4 border-t border-[#E4E7EC]">
-                  <span className="text-xs font-medium text-[#667085]">{item.cta}</span>
-                  <span className="inline-flex items-center gap-1 text-sm font-semibold text-[#0E2B6C]">
-                    Open <span aria-hidden="true">→</span>
-                  </span>
-                </div>
-              </div>
-            </NavLink>
-          ))}
-        </div>
-      </section>
-
-      {/* Telemetry */}
-      <section className="surface p-6 md:p-8">
-        <div className="flex items-start justify-between gap-4 flex-wrap">
-          <div>
-            <h2 className="text-xl md:text-2xl font-semibold tracking-tight text-[#101828]">System Telemetry & KPIs</h2>
-            <p className="mt-2 text-sm text-[#667085] max-w-2xl">
-              Health bars, badges, and a retrieval accuracy dial for the current pipeline state.
-            </p>
-          </div>
-          <div className="rounded-[8px] border border-[#E4E7EC] bg-white px-4 py-2 text-xs font-medium text-[#667085]">
-            Live Simulation • Preview
-          </div>
-        </div>
-
-        <div className="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-4">
-          <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="rounded-[8px] border border-[#E4E7EC] bg-white p-5">
-              <div className="flex items-center justify-between gap-3">
-                <div className="min-w-0">
-                  <div className="text-sm font-semibold text-[#101828]">{METRICS[0].title}</div>
-                  <div className="mt-0.5 text-xs text-[#667085]">{METRICS[0].subtitle}</div>
-                </div>
-                <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[11px] font-semibold ${METRICS[0].tone === 'success' ? 'bg-[#E7F7EF] border-[#B7E8CF] text-[#0F6E44]' : ''}`}>
-                  <span className="h-1.5 w-1.5 rounded-full bg-[#12B76A]" />
-                  {METRICS[0].badgeText}
-                </span>
-              </div>
-
-              <div className="mt-4">
-                <ProgressBar value={100} labelLeft="Index readiness" labelRight="Healthy" tone="success" />
-              </div>
-
-              <div className="mt-4 grid grid-cols-2 gap-3">
-                <div className="rounded-[8px] border border-[#E4E7EC] bg-white p-3">
-                  <div className="text-[11px] font-medium uppercase tracking-wider text-[#667085]">Index Metric</div>
-                  <div className="mt-1 text-lg font-semibold text-[#101828]">Cosine</div>
-                </div>
-                <div className="rounded-[8px] border border-[#E4E7EC] bg-white p-3">
-                  <div className="text-[11px] font-medium uppercase tracking-wider text-[#667085]">Collections</div>
-                  <div className="mt-1 text-lg font-semibold text-[#101828]">Active</div>
-                </div>
-              </div>
-            </div>
-
-            <div className="rounded-[8px] border border-[#E4E7EC] bg-white p-5">
-              <div className="flex items-center justify-between gap-3">
-                <div className="min-w-0">
-                  <div className="text-sm font-semibold text-[#101828]">{METRICS[1].title}</div>
-                  <div className="mt-0.5 text-xs text-[#667085]">{METRICS[1].subtitle}</div>
-                </div>
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-[#C7D2E8] bg-[#E9EDF6] px-2.5 py-0.5 text-[11px] font-semibold text-[#0E2B6C]">
-                  <span className="h-1.5 w-1.5 rounded-full bg-[#0E2B6C]" />
-                  Active
-                </span>
-              </div>
-
-              <div className="mt-4 space-y-3">
-                <div className="rounded-[8px] border border-[#E4E7EC] bg-white p-3.5">
-                  <div className="flex items-center justify-between gap-3">
-                    <div>
-                      <div className="text-[11px] font-medium uppercase tracking-wider text-[#667085]">Latency</div>
-                      <div className="mt-1 text-lg font-semibold text-[#101828]">0.7 ms</div>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-[11px] font-medium uppercase tracking-wider text-[#667085]">Model</div>
-                      <div className="mt-1 text-sm font-mono font-semibold text-[#0E2B6C]">384D MiniLM-L6-v2</div>
-                    </div>
-                  </div>
-                </div>
-
-                <ProgressBar value={98} labelLeft="Pipeline readiness" labelRight="Sub-ms" tone="accent" />
-              </div>
-
-              <div className="mt-4 flex items-center gap-3">
-                <span className="inline-flex items-center justify-center rounded-[8px] bg-[#F2F4F7] border border-[#E4E7EC] p-2">
-                  <svg className="h-4 w-4 text-[#0E2B6C]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
-                  </svg>
-                </span>
-                <div className="min-w-0">
-                  <div className="text-xs font-medium text-[#101828]">Embeddings Pipeline</div>
-                  <div className="text-xs text-[#667085]">Queue stable • Warm index cache</div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="rounded-[8px] border border-[#E4E7EC] bg-white p-5">
-            <div className="flex items-center justify-between gap-3">
-              <div className="min-w-0">
-                <div className="text-sm font-semibold text-[#101828]">{METRICS[2].title}</div>
-                <div className="mt-0.5 text-xs text-[#667085]">{METRICS[2].subtitle}</div>
-              </div>
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-[#E4E7EC] bg-[#F2F4F7] px-2.5 py-0.5 text-[11px] font-semibold text-[#344054]">
-                <span className="h-1.5 w-1.5 rounded-full bg-[#667085]" />
-                {METRICS[2].badgeText}
-              </span>
-            </div>
-
-            <div className="mt-4">
-              <AccuracyDial value={98.4} />
-            </div>
-
-            <div className="mt-4 rounded-[8px] border border-[#E4E7EC] bg-white p-3.5">
-              <div className="flex items-center justify-between gap-3">
-                <div className="text-[11px] font-medium uppercase tracking-wider text-[#667085]">KPI Summary</div>
-                <span className="rounded-full bg-[#E7F7EF] border border-[#B7E8CF] px-2.5 py-0.5 text-[11px] font-semibold text-[#0F6E44]">
-                  Retrieval Strong
-                </span>
-              </div>
-              <div className="mt-2 text-sm font-medium text-[#101828]">
-                Top-k results match expected intents with minimal drift.
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="mt-5 rounded-[8px] border border-[#E4E7EC] bg-white overflow-hidden">
-          <div className="flex items-center justify-between gap-4 p-4">
-            <div className="flex items-center gap-3 min-w-0">
-              <span className="h-10 w-10 rounded-[8px] bg-[#E9EDF6] border border-[#C7D2E8] flex items-center justify-center">
-                <svg className="h-5 w-5 text-[#0E2B6C]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 12h18M3 6h18M3 18h18" />
-                </svg>
-              </span>
-              <div className="min-w-0">
-                <div className="text-sm font-semibold text-[#101828]">Telemetry Stream</div>
-                <div className="text-xs text-[#667085]">Live updates reflecting pipeline activity</div>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <span className="text-xs font-medium text-[#667085]">Last sync</span>
-              <span className="rounded-full border border-[#E4E7EC] bg-white px-3 py-1 text-xs font-mono font-medium text-[#101828]">
-                now
-              </span>
-            </div>
-          </div>
-          <div className="h-1 bg-[#F2F4F7]">
-            <div className="h-1 bg-[#0E2B6C] w-1/2" />
-          </div>
-        </div>
-      </section>
-    </div>
-  )
+const container = {
+  hidden: { opacity: 0 },
+  show: { opacity: 1, transition: { staggerChildren: 0.12 } },
 }
 
+const item = {
+  hidden: { opacity: 0, y: 20 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: 'easeOut' as const } },
+}
+
+export default function Home() {
+  return (
+    <motion.div variants={container} initial="hidden" animate="show" className="space-y-8">
+{/* Hero */}
+<motion.section
+        variants={item}
+        className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 md:p-10 shadow-sm"
+      >
+        <div className="absolute inset-x-0 top-0 h-1.5 brand-grad shimmer" aria-hidden="true" />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
+<div>
+            <div className="flex items-center gap-3">
+              <div className="brand-grad h-11 w-11 rounded-xl text-white flex items-center justify-center text-lg font-bold shadow-[0_4px_14px_rgba(14,116,144,0.35)]">
+                C
+              </div>
+              <div className="leading-tight">
+                <div className="font-display font-bold text-2xl md:text-3xl tracking-tight">
+                  <span className="gradient-text">Clario</span>
+                </div>
+                <div className="text-xs font-medium text-[#667085]">AI Coaching Assistant</div>
+              </div>
+            </div>
+
+            <h1 className="mt-6 text-3xl md:text-5xl font-display font-semibold tracking-tight text-[#101828] leading-tight">
+              Coach support agents <span className="gradient-text">in real time</span>.
+            </h1>
+            <p className="mt-4 text-sm md:text-base text-[#667085] max-w-xl leading-relaxed">
+              Clario combines RAG-powered knowledge retrieval with a multi-agent pipeline to deliver
+              live intent analysis, sentiment tracking, and actionable coaching suggestions.
+            </p>
+            <div className="mt-6 flex flex-wrap gap-3">
+              <NavLink
+                to="/console"
+                className="inline-flex items-center gap-2 rounded-lg brand-grad px-6 py-3 text-sm font-medium text-white shadow-[0_8px_20px_rgba(14,116,144,0.3)] hover:opacity-95 transition-opacity"
+              >
+                <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Launch Live Console
+              </NavLink>
+              <NavLink
+                to="/session"
+                className="inline-flex items-center gap-2 rounded-lg border border-[#C7D2E8] bg-white px-6 py-3 text-sm font-medium text-[#0E2B6C] hover:bg-[#E9EDF6] transition-colors"
+              >
+                Configure Session
+              </NavLink>
+            </div>
+          </div>
+
+{/* Hero graphic — structured, spacious pipeline visual */}
+          <div className="hidden lg:block">
+            <div className="relative rounded-2xl border border-gray-200 bg-gradient-to-br from-slate-50 to-white p-8 shadow-sm overflow-hidden">
+              <div className="absolute inset-0 brand-grad-soft glow-orb" aria-hidden="true" />
+
+              {/* Center engine node */}
+              <div className="relative mx-auto mb-6 flex h-24 w-24 items-center justify-center brand-grad rounded-2xl text-white shadow-[0_12px_34px_rgba(14,116,144,0.4)] float-slow">
+                <svg className="h-11 w-11" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+              </div>
+
+              {/* Capability modules — clean 2x2 grid */}
+              <div className="relative grid grid-cols-2 gap-4">
+                {[
+                  { label: 'Intent', sub: 'Classification', grad: 'panel-blue', delay: 0 },
+                  { label: 'Sentiment', sub: 'Trend analysis', grad: 'panel-teal', delay: 0.8 },
+                  { label: 'Knowledge', sub: 'RAG retrieval', grad: 'panel-green', delay: 1.6 },
+                  { label: 'Coaching', sub: 'Live suggestions', grad: 'panel-violet', delay: 2.4 },
+                ].map((n, i) => (
+                  <motion.div
+                    key={n.label}
+                    initial={{ opacity: 0, y: 16 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.2 + i * 0.1, duration: 0.5, ease: 'easeOut' }}
+                    whileHover={{ y: -4, transition: { duration: 0.2 } }}
+                    className={`${n.grad} rounded-xl px-4 py-3 cursor-default hover:shadow-lg transition-shadow`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <motion.span
+                        animate={{ scale: [1, 1.15, 1] }}
+                        transition={{ duration: 2.4, repeat: Infinity, delay: n.delay }}
+                        className="h-2 w-2 rounded-full bg-[#0E2B6C]"
+                      />
+                      <span className="text-sm font-semibold text-[#0E2B6C]">{n.label}</span>
+                    </div>
+                    <div className="mt-1 pl-4 text-[11px] font-medium text-[#667085]">{n.sub}</div>
+                  </motion.div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </motion.section>
+
+{/* How it works */}
+<motion.section variants={item} className="rounded-2xl border border-slate-200 bg-white p-6 md:p-8 shadow-sm">
+        <div className="flex items-center justify-between gap-4 flex-wrap">
+          <div>
+            <h2 className="text-xl md:text-2xl font-display font-semibold tracking-tight text-[#101828]">How it works</h2>
+            <p className="mt-1 text-sm text-[#667085]">Three simple steps from configuration to live coaching.</p>
+          </div>
+        </div>
+        <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+          {STEPS.map((s, i) => (
+            <motion.div
+              key={s.to}
+              variants={item}
+              className="group relative rounded-[8px] border border-[#d7e3f4] bg-white p-6 hover-lift"
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-[#98A2B3]">Step {i + 1}</span>
+                <div className="h-10 w-10 rounded-lg brand-grad-soft text-[#0E2B6C] flex items-center justify-center">
+                  {s.icon}
+                </div>
+              </div>
+              <h3 className="mt-4 text-base font-display font-semibold text-[#101828]">{s.title}</h3>
+              <p className="mt-2 text-sm text-[#667085] leading-relaxed">{s.body}</p>
+              <NavLink
+                to={s.to}
+                className="mt-4 inline-flex items-center gap-1.5 text-sm font-medium text-[#0E2B6C] group-hover:gap-2.5 transition-all"
+              >
+                {s.cta} <span aria-hidden="true">→</span>
+              </NavLink>
+            </motion.div>
+          ))}
+        </div>
+      </motion.section>
+
+      {/* Features */}
+      <motion.section variants={item}>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          {FEATURES.map((f) => (
+            <motion.div key={f.title} variants={item} className={`${f.grad} p-6 hover-lift`}>
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-lg bg-white/80 text-[#0E2B6C] flex items-center justify-center shadow-sm">
+                  {f.icon}
+                </div>
+                <h3 className="font-display font-semibold text-[#101828]">{f.title}</h3>
+              </div>
+              <p className="mt-3 text-sm text-[#344054] leading-relaxed">{f.body}</p>
+            </motion.div>
+          ))}
+        </div>
+      </motion.section>
+    </motion.div>
+  )
+}

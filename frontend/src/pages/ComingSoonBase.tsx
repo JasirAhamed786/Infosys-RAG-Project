@@ -19,11 +19,11 @@ const BADGE: Record<NonNullable<Props['badgeColor']>, string> = {
 
 export default function ComingSoonBase({ title, description, milestone, badgeColor = 'indigo', children }: Props) {
   return (
-    <section className="bg-white border border-[#E4E7EC] rounded-[8px] p-8">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#E4E7EC] pb-6">
+    <section className="gradient-surface p-8">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#d7e3f4] pb-6">
         <div>
           <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-semibold text-[#101828] tracking-tight">{title}</h1>
+            <h1 className="text-2xl font-display font-semibold text-[#101828] tracking-tight">{title}</h1>
             <span className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium ${BADGE[badgeColor]}`}>
               <span className="h-1.5 w-1.5 rounded-full bg-current opacity-70" />
               {milestone}

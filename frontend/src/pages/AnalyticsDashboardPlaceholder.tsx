@@ -9,11 +9,11 @@ export default function AnalyticsDashboardPlaceholder() {
       milestone="Milestone 4"
       badgeColor="emerald"
     >
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div className="rounded-[8px] border border-[#E4E7EC] bg-[#FAFBFC] p-6">
+<div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="rounded-[8px] border border-[#d7e3f4] gradient-surface-deep p-6">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <div className="text-sm font-semibold text-[#101828]">Escalation Risk Trend</div>
+              <div className="text-sm font-display font-semibold text-[#101828]">Escalation Risk Trend</div>
               <div className="text-xs text-[#667085] mt-1">Placeholder chart shape</div>
             </div>
           </div>

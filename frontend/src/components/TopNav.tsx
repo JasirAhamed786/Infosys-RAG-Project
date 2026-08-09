@@ -17,11 +17,11 @@ export default function TopNav() {
   const { isSessionActive } = useSession()
 
   return (
-    <header className="sticky top-0 z-50 border-b border-[#E4E7EC] bg-white">
+    <header className="sticky top-0 z-50 border-b border-[#C7D2E8] bg-white/85 backdrop-blur-md brand-grad-nav">
       <div className="mx-auto max-w-7xl px-4 md:px-8 py-3 flex items-center justify-between gap-4">
         {/* Brand Logo & Title */}
-        <div className="flex items-center gap-3">
-          <div className="h-9 w-9 rounded-[8px] bg-[#0E2B6C] text-white flex items-center justify-center text-sm font-semibold">
+<div className="flex items-center gap-3">
+          <div className="brand-grad h-9 w-9 rounded-[8px] text-white flex items-center justify-center text-sm font-semibold shadow-[0_2px_8px_rgba(14,116,144,0.35)]">
             C
           </div>
           <div className="leading-tight">

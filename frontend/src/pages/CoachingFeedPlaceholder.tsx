@@ -12,12 +12,12 @@ export default function CoachingFeedPlaceholder() {
   const isLoading = turnStatus === 'pending'
 
 return (
-    <section className="bg-white border border-[#E4E7EC] rounded-[8px] p-8 max-w-7xl mx-auto w-full">
+    <section className="gradient-surface p-8 max-w-7xl mx-auto w-full">
       {/* ── Header ── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#E4E7EC] pb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#d7e3f4] pb-6">
         <div>
           <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-semibold text-[#101828] tracking-tight">Coaching Feed</h1>
+            <h1 className="text-2xl font-display font-semibold text-[#101828] tracking-tight">Coaching Feed</h1>
             <span className="inline-flex items-center gap-1.5 rounded-full border border-[#C7D2E8] bg-[#E9EDF6] px-3 py-1 text-xs font-medium text-[#0E2B6C]">
               <span className="h-1.5 w-1.5 rounded-full bg-[#0E2B6C]" />
               Live

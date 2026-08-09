@@ -52,13 +52,13 @@ export default function SessionConfig() {
     }
   }
 
-  return (
-    <section className="bg-white border border-[#E4E7EC] rounded-[8px] p-8">
+return (
+<section className="rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
       {/* Header Section */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#E4E7EC] pb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-6">
         <div>
           <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-semibold text-[#101828] tracking-tight">Session Configuration</h1>
+            <h1 className="text-2xl font-display font-semibold text-[#101828] tracking-tight">Session Configuration</h1>
           </div>
           <p className="text-[#667085] text-sm mt-1.5">
             Configure parameters to initialize an AI coaching environment tailored to specific business contexts.
@@ -73,12 +73,12 @@ export default function SessionConfig() {
             <label className="block text-sm font-medium text-[#101828] mb-2">
               Coaching Mode
             </label>
-            <div className="rounded-lg border border-[#E4E7EC] bg-white p-4 transition-colors">
+<div className="rounded-lg border border-slate-200 bg-slate-50/50 p-4 transition-colors">
               <div className="relative">
                 <select
                   value={form.mode}
                   onChange={(e) => setForm((prev) => ({ ...prev, mode: e.target.value as ModeUi }))}
-                  className="w-full appearance-none rounded-lg border border-[#D0D5DD] bg-white px-4 py-2.5 text-sm font-medium text-[#101828] focus:border-[#0E2B6C] focus:outline-none focus:ring-2 focus:ring-[#0E2B6C]/20 disabled:bg-[#F2F4F7] cursor-pointer"
+                  className="w-full appearance-none rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-[#101828] focus:border-[#0E2B6C] focus:outline-none focus:ring-2 focus:ring-[#0E2B6C]/20 disabled:bg-[#F2F4F7] cursor-pointer"
                   disabled={loading}
                 >
                   <option value="Simulator">Simulator (Automated AI Roleplay)</option>
@@ -104,9 +104,9 @@ export default function SessionConfig() {
               Product / Service Context
               <span className="text-[#F04438] ml-1">*</span>
             </label>
-            <input
+<input
               type="text"
-              className="w-full rounded-lg border border-[#D0D5DD] px-4 py-2.5 text-sm text-[#101828] placeholder-[#98A2B3] focus:border-[#0E2B6C] focus:outline-none focus:ring-2 focus:ring-[#0E2B6C]/20 disabled:bg-[#F2F4F7] transition-colors"
+              className="gradient-placeholder w-full rounded-lg border border-slate-200 bg-slate-50/50 px-4 py-2.5 text-sm text-[#101828] placeholder-[#98A2B3] focus:border-[#0E2B6C] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0E2B6C]/20 disabled:bg-[#F2F4F7] transition-colors"
               value={form.product_context}
               onChange={(e) => setForm((prev) => ({ ...prev, product_context: e.target.value }))}
               placeholder="e.g., Retail Banking Support, SaaS Enterprise Sales"
@@ -120,9 +120,9 @@ export default function SessionConfig() {
             <label className="block text-sm font-medium text-[#101828] mb-2">
               Target Persona <span className="text-xs font-normal text-[#667085]">(Optional)</span>
             </label>
-            <input
+<input
               type="text"
-              className="w-full rounded-lg border border-[#D0D5DD] px-4 py-2.5 text-sm text-[#101828] placeholder-[#98A2B3] focus:border-[#0E2B6C] focus:outline-none focus:ring-2 focus:ring-[#0E2B6C]/20 disabled:bg-[#F2F4F7] transition-colors"
+              className="w-full rounded-lg border border-slate-200 bg-slate-50/50 px-4 py-2.5 text-sm text-[#101828] placeholder-[#98A2B3] focus:border-[#0E2B6C] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0E2B6C]/20 disabled:bg-[#F2F4F7] transition-colors"
               value={form.persona}
               onChange={(e) => setForm((prev) => ({ ...prev, persona: e.target.value }))}
               placeholder="e.g., Frustrated Customer, Tier 2 Agent"
@@ -136,8 +136,8 @@ export default function SessionConfig() {
               Customer Scenario
               <span className="text-[#F04438] ml-1">*</span>
             </label>
-            <textarea
-              className="w-full rounded-lg border border-[#D0D5DD] px-4 py-3 text-sm text-[#101828] placeholder-[#98A2B3] min-h-[130px] focus:border-[#0E2B6C] focus:outline-none focus:ring-2 focus:ring-[#0E2B6C]/20 disabled:bg-[#F2F4F7] transition-colors resize-y leading-relaxed"
+<textarea
+              className="w-full rounded-lg border border-slate-200 bg-slate-50/50 px-4 py-3 text-sm text-[#101828] placeholder-[#98A2B3] min-h-[130px] focus:border-[#0E2B6C] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0E2B6C]/20 disabled:bg-[#F2F4F7] transition-colors resize-y leading-relaxed"
               value={form.scenario}
               onChange={(e) => setForm((prev) => ({ ...prev, scenario: e.target.value }))}
               placeholder="Provide context on the user's issue. For example: The customer is calling to dispute a recurring late fee on their credit card after scheduling an automatic payment..."
@@ -152,7 +152,7 @@ export default function SessionConfig() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full sm:w-auto min-w-[220px] inline-flex items-center justify-center rounded-lg bg-[#0E2B6C] px-8 py-3.5 text-sm font-medium text-white hover:bg-[#0A2154] focus:outline-none focus:ring-2 focus:ring-[#0E2B6C]/30 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+className="w-full sm:w-auto min-w-[220px] inline-flex items-center justify-center rounded-lg brand-grad px-8 py-3.5 text-sm font-medium text-white hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-[#0E7490]/40 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
           >
             {loading ? (
               <>

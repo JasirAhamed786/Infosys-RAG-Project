@@ -10,8 +10,8 @@ export default function ReportsPlaceholder() {
       badgeColor="blue"
     >
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div className="lg:col-span-2 rounded-[8px] border border-[#E4E7EC] bg-[#FAFBFC] p-6">
-          <div className="text-sm font-semibold text-[#101828]">Session Summary</div>
+        <div className="lg:col-span-2 rounded-[8px] border border-[#d7e3f4] gradient-surface-deep p-6">
+          <div className="text-sm font-display font-semibold text-[#101828]">Session Summary</div>
           <div className="mt-3 h-5 bg-[#E4E7EC] rounded w-4/5 animate-pulse" />
           <div className="mt-2 h-5 bg-[#E4E7EC] rounded w-full animate-pulse" />
           <div className="mt-2 h-5 bg-[#E4E7EC] rounded w-3/4 animate-pulse" />

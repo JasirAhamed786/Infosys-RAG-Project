@@ -193,15 +193,16 @@ const messagesEndRef = useRef<HTMLDivElement>(null)
   return (
     <div className="flex flex-col min-h-0 h-full max-w-[1600px] mx-auto w-full pb-12">
 
-      {/* ── Header Banner ── */}
-      <div className="shrink-0 bg-white border border-[#E4E7EC] rounded-[8px] p-5 md:p-6 mb-6">
+{/* ── Header Banner ── */}
+      <div className="shrink-0 rounded-2xl border border-slate-200 bg-white p-5 md:p-6 mb-6 shadow-sm relative overflow-hidden">
+        <div className="absolute inset-x-0 top-0 h-1.5 brand-grad" aria-hidden="true" />
         <div className="flex items-center justify-between gap-4 flex-wrap">
           <div>
-            <div className="inline-flex items-center gap-2 rounded-full border border-[#E4E7EC] bg-white px-3.5 py-1 text-xs font-medium text-[#667085]">
+            <div className="inline-flex items-center gap-2 rounded-full border border-[#C7D2E8] bg-gradient-to-r from-[#E9EDF6] to-[#E7F7EF] px-3.5 py-1 text-xs font-medium text-[#0E2B6C]">
               <span className={`h-1.5 w-1.5 rounded-full ${isSessionActive ? 'bg-[#12B76A]' : 'bg-[#C7CED9]'}`} />
               {isSessionActive ? 'Live Session Active' : 'Configure New Session'}
             </div>
-            <h1 className="mt-2.5 text-2xl md:text-3xl font-semibold tracking-tight text-[#101828]">
+            <h1 className="mt-2.5 text-2xl md:text-3xl font-display font-semibold tracking-tight text-[#101828]">
               Live Support Console
             </h1>
             <p className="mt-1 text-sm text-[#667085] max-w-3xl">
@@ -226,9 +227,9 @@ const messagesEndRef = useRef<HTMLDivElement>(null)
         </div>
       </div>
 
-      {/* ── Session Config (shown when no active session) ── */}
-      {!isSessionActive && (
-        <section className="bg-white border border-[#E4E7EC] rounded-[8px] p-6 md:p-8 max-w-2xl mx-auto w-full">
+{/* ── Session Config (shown when no active session) ── */}
+{!isSessionActive && (
+        <section className="rounded-2xl border border-slate-200 bg-white p-6 md:p-8 max-w-2xl mx-auto w-full shadow-sm">
 
           {/* ── Mode Toggle: New Session vs Load Existing ── */}
           <div className="flex rounded-lg border border-[#E4E7EC] p-1 bg-[#F2F4F7] mb-6">
@@ -330,7 +331,7 @@ const messagesEndRef = useRef<HTMLDivElement>(null)
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full inline-flex items-center justify-center rounded-lg bg-[#0E2B6C] px-8 py-3.5 text-sm font-medium text-white hover:bg-[#0A2154] focus:outline-none focus:ring-2 focus:ring-[#0E2B6C]/30 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+className="w-full inline-flex items-center justify-center rounded-lg brand-grad px-8 py-3.5 text-sm font-medium text-white hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-[#0E7490]/40 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
               >
                 {loading ? (
                   <>
@@ -376,7 +377,7 @@ const messagesEndRef = useRef<HTMLDivElement>(null)
               <button
                 type="submit"
                 disabled={loading || !existingSessionId.trim()}
-                className="w-full inline-flex items-center justify-center rounded-lg bg-[#0E2B6C] px-8 py-3.5 text-sm font-medium text-white hover:bg-[#0A2154] focus:outline-none focus:ring-2 focus:ring-[#0E2B6C]/30 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="w-full inline-flex items-center justify-center rounded-lg brand-grad px-8 py-3.5 text-sm font-medium text-white hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-[#0E7490]/40 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
               >
                 {loading ? (
                   <>
@@ -438,9 +439,9 @@ const messagesEndRef = useRef<HTMLDivElement>(null)
           {/* Top Half: 50/50 Split for Chat and Intent Metrics */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
 
-            {/* Left Side: Chat Interface */}
-            <div className="bg-white border border-[#E4E7EC] rounded-[8px] flex flex-col lg:h-[600px] min-h-[480px] overflow-hidden">
-              <div className="shrink-0 border-b border-[#E4E7EC] px-5 py-4 flex items-center justify-between bg-white">
+{/* Left Side: Chat Interface */}
+            <div className="rounded-2xl border border-slate-200 bg-white shadow-sm flex flex-col lg:h-[600px] min-h-[480px] overflow-hidden fade-in-up">
+              <div className="shrink-0 border-b border-slate-200 px-5 py-4 flex items-center justify-between bg-slate-50/50">
                 <div className="flex items-center gap-3">
                   <div className="h-8 w-8 rounded-full bg-[#E9EDF6] flex items-center justify-center text-[#0E2B6C]">
                     <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -520,7 +521,7 @@ const messagesEndRef = useRef<HTMLDivElement>(null)
                   <button
                     type="submit"
                     disabled={!agentInput.trim() || turnStatus === 'pending' || isTyping}
-                    className="inline-flex items-center justify-center rounded-lg bg-[#0E2B6C] px-6 py-3 text-sm font-medium text-white hover:bg-[#0A2154] focus:outline-none focus:ring-2 focus:ring-[#0E2B6C]/30 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    className="inline-flex items-center justify-center rounded-lg brand-grad px-6 py-3 text-sm font-medium text-white hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-[#0E7490]/40 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
                   >
                     {turnStatus === 'pending' ? (
                       <svg className="animate-spin h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
@@ -537,22 +538,22 @@ const messagesEndRef = useRef<HTMLDivElement>(null)
               </div>
             </div>
 
-            {/* Right Side: Intent & Sentiment Dashboard */}
-            <div className="bg-white border border-[#E4E7EC] rounded-[8px] lg:h-[600px] min-h-[480px] flex flex-col overflow-hidden">
-              <div className="shrink-0 border-b border-[#E4E7EC] px-6 py-5 bg-white">
+{/* Right Side: Intent & Sentiment Dashboard */}
+            <div className="rounded-2xl border border-slate-200 bg-white shadow-sm flex flex-col lg:h-[600px] min-h-[480px] overflow-hidden fade-in-up">
+              <div className="shrink-0 border-b border-slate-200 px-6 py-5 bg-slate-50/50">
                 <h3 className="font-semibold text-[#101828] text-base flex items-center gap-2.5">
-                  <span className="w-2 h-2 rounded-full bg-[#0E2B6C]" />
+                  <span className="w-2 h-2 rounded-full bg-[#6D28D9]" />
                   Real-Time AI Intent & Sentiment
                 </h3>
                 <p className="text-xs text-[#667085] mt-1">Live metrics evaluating the customer's current emotional state.</p>
               </div>
 
-              <div className="flex-1 p-6 flex flex-col justify-center bg-[#FAFBFC]">
+              <div className="flex-1 p-6 flex flex-col justify-center bg-[#FAFBFC]/80">
                 {latestIntentSentiment ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 h-full">
                     {/* Intent Card */}
-                    <div className="rounded-lg bg-white border border-[#E4E7EC] p-6 flex flex-col justify-center">
-                      <div className="text-xs font-semibold uppercase tracking-wider text-[#667085] mb-2">Classified Intent</div>
+                    <div className="rounded-lg panel-blue hover-lift p-6 flex flex-col justify-center">
+                      <div className="text-xs font-semibold uppercase tracking-wider text-[#0E2B6C] mb-2">Classified Intent</div>
                       <div className="text-xl md:text-2xl font-semibold text-[#0E2B6C] capitalize leading-tight">
                         {latestIntentSentiment?.intent?.replace(/_/g, ' ') || 'General Question'}
                       </div>
@@ -560,8 +561,8 @@ const messagesEndRef = useRef<HTMLDivElement>(null)
                     </div>
 
                     {/* Emotion Card */}
-                    <div className="rounded-lg bg-white border border-[#E4E7EC] p-6 flex flex-col justify-center">
-                      <div className="text-xs font-semibold uppercase tracking-wider text-[#667085] mb-3">Detected Emotion</div>
+                    <div className="rounded-lg panel-violet hover-lift p-6 flex flex-col justify-center">
+                      <div className="text-xs font-semibold uppercase tracking-wider text-[#6D28D9] mb-3">Detected Emotion</div>
                       <div className="flex items-center">
                         <span className={`inline-flex items-center gap-2 rounded-lg border px-4 py-2 text-base font-semibold capitalize ${EMOTION_COLORS[latestIntentSentiment?.emotion || 'neutral'] || 'bg-[#F2F4F7] border-[#E4E7EC] text-[#667085]'}`}>
                           <span className="h-2 w-2 rounded-full bg-current" />
@@ -571,8 +572,8 @@ const messagesEndRef = useRef<HTMLDivElement>(null)
                       <p className="text-[11px] text-[#98A2B3] mt-3">Primary emotional state</p>
                     </div>
 
-                    {/* Frustration Gauge */}
-                    <div className="rounded-lg bg-white border border-[#E4E7EC] p-6 flex flex-col justify-center">
+{/* Frustration Gauge */}
+                    <div className="rounded-lg panel-amber hover-lift p-6 flex flex-col justify-center">
                       <div className="flex items-center justify-between mb-3">
                         <div className="text-xs font-semibold uppercase tracking-wider text-[#667085]">Frustration Level</div>
                         <span className="text-xl font-semibold text-[#101828]">{latestIntentSentiment?.frustration_score || 0}<span className="text-sm text-[#98A2B3] font-medium">/100</span></span>
@@ -593,7 +594,7 @@ const messagesEndRef = useRef<HTMLDivElement>(null)
                     </div>
 
                     {/* Satisfaction Trend */}
-                    <div className="rounded-lg bg-white border border-[#E4E7EC] p-6 flex flex-col justify-center">
+                    <div className="rounded-lg panel-green hover-lift p-6 flex flex-col justify-center">
                       <div className="text-xs font-semibold uppercase tracking-wider text-[#667085] mb-2">Satisfaction Trend</div>
                       <div className="flex items-center gap-3">
                         <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-[#F2F4F7] border border-[#E4E7EC] text-xl text-[#0E2B6C]">
@@ -626,19 +627,19 @@ const messagesEndRef = useRef<HTMLDivElement>(null)
           {/* Bottom Row: Knowledge Base & Coaching Span Full Width */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-            {/* Knowledge Base Results (2/3) */}
-            <div className="lg:col-span-2 bg-white border border-[#E4E7EC] rounded-[8px] flex flex-col">
-              <div className="shrink-0 border-b border-[#E4E7EC] px-6 py-4 flex justify-between items-center bg-white rounded-t-[8px]">
+{/* Knowledge Base Results (2/3) */}
+            <div className="lg:col-span-2 rounded-2xl border border-slate-200 bg-white shadow-sm flex flex-col fade-in-up">
+              <div className="shrink-0 border-b border-slate-200 px-6 py-4 flex justify-between items-center bg-slate-50/50 rounded-t-[8px]">
                 <h3 className="font-semibold text-[#101828] text-sm flex items-center gap-2.5">
-                  <span className="w-2 h-2 rounded-full bg-[#0E2B6C]" />
+                  <span className="w-2 h-2 rounded-full bg-[#0E7490]" />
                   Agent Knowledge Base Retrieval
                 </h3>
-                <span className="text-[11px] font-medium text-[#667085] bg-[#F2F4F7] px-2.5 py-1 rounded-md">
+                <span className="text-[11px] font-medium text-[#0E7490] bg-white/70 px-2.5 py-1 rounded-md border border-[#a9e0ea]">
                   RAG Pipeline
                 </span>
               </div>
 
-              <div className="p-6 bg-[#FAFBFC] flex-1">
+              <div className="p-6 bg-[#FAFBFC]/70 flex-1">
                 {latestKnowledgeResults ? (
                   latestKnowledgeResults?.results?.length > 0 ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -697,21 +698,21 @@ const messagesEndRef = useRef<HTMLDivElement>(null)
               </div>
             </div>
 
-            {/* Live Coaching (1/3) */}
-            <div className="lg:col-span-1 bg-white border border-[#E4E7EC] rounded-[8px] flex flex-col">
-              <div className="shrink-0 border-b border-[#E4E7EC] px-6 py-4 flex justify-between items-center bg-white rounded-t-[8px]">
+{/* Live Coaching (1/3) */}
+            <div className="lg:col-span-1 rounded-2xl border border-slate-200 bg-white shadow-sm flex flex-col fade-in-up">
+              <div className="shrink-0 border-b border-slate-200 px-6 py-4 flex justify-between items-center bg-slate-50/50 rounded-t-[8px]">
                 <h3 className="font-semibold text-[#101828] text-sm flex items-center gap-2.5">
-                  <span className="w-2 h-2 rounded-full bg-[#0E2B6C]" />
+                  <span className="w-2 h-2 rounded-full bg-[#0EA5E9]" />
                   Live Coaching
                 </h3>
               </div>
-              <div className="p-6 flex flex-col justify-center items-center h-full text-center bg-[#FAFBFC]">
+              <div className="p-6 flex flex-col justify-center items-center h-full text-center bg-white/60">
                 {latestCoachingSuggestion ? (
                   <>
                     {latestCoachingSuggestion.coaching_tips?.length > 0 && (
                       <div className="w-full text-left mb-4 space-y-2">
                         {latestCoachingSuggestion.coaching_tips.map((tip, i) => (
-                          <div key={i} className="rounded-lg bg-[#E9EDF6] border border-[#C7D2E8] px-3 py-2 text-left">
+                          <div key={i} className="rounded-lg bg-white/80 border border-[#bae0f5] px-3 py-2 text-left">
                             <div className="text-[10px] font-semibold uppercase tracking-wider text-[#0E2B6C] mb-0.5">Tip {i + 1}</div>
                             <p className="text-[12px] text-[#101828] leading-relaxed">{tip}</p>
                           </div>
@@ -726,7 +727,7 @@ const messagesEndRef = useRef<HTMLDivElement>(null)
                           type="button"
                           onClick={() => setAgentInput(latestCoachingSuggestion.suggested_response ?? '')}
                           disabled={turnStatus === 'pending' || isTyping}
-                          className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-[#0E2B6C] px-3 py-1.5 text-xs font-medium text-white hover:bg-[#0A2154] focus:outline-none focus:ring-2 focus:ring-[#0E2B6C]/30 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                          className="mt-3 inline-flex items-center gap-1.5 rounded-lg brand-grad px-3 py-1.5 text-xs font-medium text-white hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-[#0E7490]/40 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
                         >
                           <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />

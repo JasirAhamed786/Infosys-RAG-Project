@@ -106,12 +106,12 @@ export default function KnowledgeBaseUpload() {
   }
 
 return (
-    <section className="bg-white border border-[#E4E7EC] rounded-[8px] p-8">
+    <section className="rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
       {/* Header Section */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#E4E7EC] pb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-6">
         <div>
           <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-semibold text-[#101828] tracking-tight">Knowledge Base Upload</h1>
+            <h1 className="text-2xl font-display font-semibold text-[#101828] tracking-tight">Knowledge Base Upload</h1>
             <span className="inline-flex items-center gap-1.5 rounded-full border border-[#C7D2E8] bg-[#E9EDF6] px-3 py-1 text-xs font-medium text-[#0E2B6C]">
               <span className="h-1.5 w-1.5 rounded-full bg-[#0E2B6C]" />
               RAG Ingestion
@@ -125,11 +125,11 @@ return (
 
       <div className="mt-8 space-y-6">
         {/* Drag & Drop Zone */}
-        <div
-          className={`relative rounded-lg border-2 border-dashed transition-colors duration-200 p-8 text-center ${
+<div
+          className={`relative rounded-lg border-2 border-dashed transition-all duration-300 p-8 text-center ${
             dragActive
-              ? 'border-[#0E2B6C] bg-[#E9EDF6]'
-              : 'border-[#D0D5DD] bg-[#FAFBFC] hover:border-[#98A2B3]'
+              ? 'border-[#0E2B6C] bg-slate-50 scale-[1.01]'
+              : 'border-slate-300 bg-slate-50/50 hover:border-slate-400'
           }`}
           onDragEnter={(e) => {
             e.preventDefault()
@@ -219,7 +219,7 @@ return (
             type="button"
             onClick={onUpload}
             disabled={loading || !state.file}
-            className="inline-flex items-center justify-center rounded-lg bg-[#0E2B6C] px-6 py-3.5 text-sm font-medium text-white hover:bg-[#0A2154] focus:outline-none focus:ring-2 focus:ring-[#0E2B6C]/30 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+className="inline-flex items-center justify-center rounded-lg brand-grad px-6 py-3.5 text-sm font-medium text-white hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-[#0E7490]/40 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
           >
             {loading ? (
               <>

@@ -3,8 +3,8 @@
 @tailwind utilities;
 
 /* ─────────────────────────────────────────────────────────────
-   Clario global polish — flat, calm, token-driven.
-   No decorative gradients, no glassmorphism, no ambient motion.
+   Clario global polish — bright, airy, professional.
+   Soft light gradients + smooth motion, no heavy dark panels.
    ───────────────────────────────────────────────────────────── */
 
 :root {
@@ -20,17 +20,171 @@ body {
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: #fafbfc;
+  background-color: #e9eef5;
   color: #101828;
   font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
 }
 
-/* Flat app background — plain cool near-white, no gradient/grid/blur */
+/* App background — light blue-green gradient wash (airy, fresh, professional) */
 .app-bg {
   position: fixed;
   inset: 0;
   z-index: -1;
-  background-color: #fafbfc;
+  background-color: #eaf6f4;
+  background-image:
+    radial-gradient(1200px circle at 0% 0%, rgba(186, 224, 245, 0.85), transparent 55%),
+    radial-gradient(1100px circle at 100% 0%, rgba(190, 240, 220, 0.8), transparent 52%),
+    radial-gradient(1000px circle at 50% 115%, rgba(204, 240, 245, 0.8), transparent 55%),
+    radial-gradient(900px circle at 92% 70%, rgba(214, 240, 255, 0.7), transparent 55%);
+  animation: bgDrift 18s ease-in-out infinite alternate;
+}
+
+@keyframes bgDrift {
+  0% {
+    background-position: 0% 0%;
+  }
+  50% {
+    background-position: 100% 100%;
+  }
+  100% {
+    background-position: 0% 0%;
+  }
+}
+
+/* Animated conic/spin glow used behind hero illustrations */
+.glow-orb {
+  animation: glowOrb 8s ease-in-out infinite alternate;
+}
+@keyframes glowOrb {
+  0% {
+    transform: scale(1) translate(0, 0);
+  }
+  100% {
+    transform: scale(1.15) translate(8px, -8px);
+  }
+}
+
+/* Floating decorative element */
+.float-slow {
+  animation: floatSlow 6s ease-in-out infinite;
+}
+@keyframes floatSlow {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+/* Gentle shine sweep (used on cards / illustrations) */
+.shimmer {
+  position: relative;
+  overflow: hidden;
+}
+.shimmer::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background-image: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.55),
+    transparent
+  );
+  animation: shimmer 2.6s ease-in-out infinite;
+}
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* Soft pulsing glow for live / active indicators */
+.glow-pulse {
+  animation: glowPulse 2.2s ease-in-out infinite;
+}
+@keyframes glowPulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(14, 116, 144, 0.35);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(14, 116, 144, 0);
+  }
+}
+
+/* Smooth scale-in on hover for cards */
+.hover-lift {
+  transition: transform 240ms cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 240ms ease;
+}
+.hover-lift:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 14px 30px rgba(14, 116, 144, 0.14);
+}
+
+/* Brand gradient — blue → teal → green (used sparingly, professional) */
+.brand-grad {
+  background-image: linear-gradient(135deg, #123B8F 0%, #0E7490 55%, #059669 100%);
+}
+
+.brand-grad-soft {
+  background-image: linear-gradient(135deg, #eef5ff 0%, #e8f6f6 100%);
+}
+
+/* Translucent gradient nav header */
+.brand-grad-nav {
+  background-image: linear-gradient(135deg, rgba(255, 255, 255, 0.92) 0%, rgba(238, 244, 255, 0.88) 50%, rgba(233, 247, 244, 0.88) 100%);
+}
+
+/* Gradient headline text — color-filled display headings */
+.gradient-text {
+  background-image: linear-gradient(120deg, #2f6bff 0%, #0E7490 45%, #059669 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+
+/* Soft gradient surface — tinted cards with a subtle blue-green blend */
+.gradient-surface {
+  background-image: linear-gradient(135deg, #ffffff 0%, #eaf3ff 50%, #e6f7ef 100%);
+  border: 1px solid #c9dcec;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(14, 116, 144, 0.06);
+}
+
+/* Stronger tinted gradient surface for inner panels */
+.gradient-surface-deep {
+  background-image: linear-gradient(135deg, #e9f3ff 0%, #e1f4ec 100%);
+  border: 1px solid #bcd7ec;
+  border-radius: 8px;
+}
+
+/* Gradient outline border helper */
+.gradient-border {
+  border: 1px solid transparent;
+  background-image: linear-gradient(#fff, #fff), linear-gradient(135deg, #2f6bff, #0E7490, #059669);
+  background-origin: border-box;
+  background-clip: padding-box, border-box;
+}
+
+/* Gradient placeholder background — colorful pill for empty input placeholders */
+.placeholder-gradient {
+  background-image: linear-gradient(135deg, rgba(47, 107, 255, 0.10), rgba(14, 116, 144, 0.10), rgba(5, 150, 105, 0.10));
+  border: 1px dashed rgba(47, 107, 255, 0.35);
+  border-radius: 8px;
+}
+
+/* Gradient placeholder text — colorful hint text for empty inputs */
+.gradient-placeholder::placeholder {
+  background-image: linear-gradient(120deg, #2f6bff 0%, #0E7490 50%, #059669 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: #0E7490; /* fallback for browsers without background-clip:text on ::placeholder */
+  font-weight: 500;
+  opacity: 0.95;
 }
 
 /* Surface card helper — flat white, 1px border, 8px radius */
@@ -54,24 +208,153 @@ body {
   animation: fadeInUp 320ms ease-out both;
 }
 
+/* ── Smooth interaction/entrance animation toolkit ─────────────────── */
+
+/* Soft float for hero / decorative elements */
+.float-slow {
+  animation: floatSlow 6s ease-in-out infinite;
+}
+
+@keyframes floatSlow {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+/* Gentle shimmer sweep (used on gradient bars / stream) */
+.shimmer {
+  position: relative;
+  overflow: hidden;
+}
+.shimmer::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background-image: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.45),
+    transparent
+  );
+  animation: shimmer 2.6s ease-in-out infinite;
+}
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* Soft pulsing glow for live / active indicators */
+.glow-pulse {
+  animation: glowPulse 2.2s ease-in-out infinite;
+}
+@keyframes glowPulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(18, 116, 144, 0.35);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(18, 116, 144, 0);
+  }
+}
+
+/* Smooth scale-in on hover for cards */
+.hover-lift {
+  transition: transform 240ms cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 240ms ease;
+}
+.hover-lift:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 28px rgba(18, 59, 143, 0.16);
+}
+
+/* Base smooth transition for all interactive elements */
+.interactive {
+  transition: transform 200ms ease, background-color 200ms ease, border-color 200ms ease,
+    box-shadow 200ms ease, color 200ms ease, opacity 200ms ease;
+}
+
 @keyframes fadeIn {
   from {
     opacity: 0;
+    transform: translateY(4px);
   }
   to {
     opacity: 1;
+    transform: translateY(0);
   }
 }
 
 @keyframes fadeInUp {
   from {
     opacity: 0;
-    transform: translateY(6px);
+    transform: translateY(10px);
   }
   to {
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+/* Richer fade-in-right for side panels */
+.fade-in-right {
+  animation: fadeInRight 360ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+@keyframes fadeInRight {
+  from {
+    opacity: 0;
+    transform: translateX(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Bright, relevant inner-panel gradients -------------------------------------------------- */
+/* Blue-tinted panel */
+.panel-blue {
+  background-image: linear-gradient(135deg, #eef4ff 0%, #dbe7ff 100%);
+  border: 1px solid #c7d2e8;
+  border-radius: 8px;
+}
+/* Teal-tinted panel */
+.panel-teal {
+  background-image: linear-gradient(135deg, #e6f7fb 0%, #ccf0f5 100%);
+  border: 1px solid #a9e0ea;
+  border-radius: 8px;
+}
+/* Green-tinted panel */
+.panel-green {
+  background-image: linear-gradient(135deg, #e7f7ef 0%, #c9f0dc 100%);
+  border: 1px solid #a8e3c3;
+  border-radius: 8px;
+}
+/* Amber warning-tinted panel */
+.panel-amber {
+  background-image: linear-gradient(135deg, #fef3e2 0%, #fde3b8 100%);
+  border: 1px solid #f7d294;
+  border-radius: 8px;
+}
+/* Rose/danger-tinted panel */
+.panel-rose {
+  background-image: linear-gradient(135deg, #fdebea 0%, #fbd0cb 100%);
+  border: 1px solid #f6b5b0;
+  border-radius: 8px;
+}
+/* Violet accent panel */
+.panel-violet {
+  background-image: linear-gradient(135deg, #f1edfd 0%, #e0d8fb 100%);
+  border: 1px solid #cdc0f5;
+  border-radius: 8px;
+}
+/* Sky-blue panel */
+.panel-sky {
+  background-image: linear-gradient(135deg, #eff8ff 0%, #d6f0ff 100%);
+  border: 1px solid #bae0f5;
+  border-radius: 8px;
 }
 
 /* Focus ring re-pointed to the accent blue */
