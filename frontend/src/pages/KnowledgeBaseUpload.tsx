@@ -105,19 +105,19 @@ export default function KnowledgeBaseUpload() {
     }
   }
 
-  return (
-    <section className="bg-white border border-gray-200 rounded-2xl shadow-sm hover:shadow-md transition-shadow duration-300 p-8">
+return (
+    <section className="bg-white border border-[#E4E7EC] rounded-[8px] p-8">
       {/* Header Section */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-100 pb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#E4E7EC] pb-6">
         <div>
           <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Knowledge Base Upload</h1>
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-indigo-200 bg-indigo-50/80 px-3 py-1 text-xs font-semibold text-indigo-700 shadow-sm">
-              <span className="h-1.5 w-1.5 rounded-full bg-indigo-600 animate-pulse" />
+            <h1 className="text-2xl font-semibold text-[#101828] tracking-tight">Knowledge Base Upload</h1>
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-[#D6E0F2] bg-[#EEF2FA] px-3 py-1 text-xs font-medium text-[#2E5AAC]">
+              <span className="h-1.5 w-1.5 rounded-full bg-[#2E5AAC]" />
               RAG Ingestion
             </span>
           </div>
-          <p className="text-gray-500 text-sm mt-1.5">
+          <p className="text-[#667085] text-sm mt-1.5">
             Ingest training documents into your vector database to enhance retrieval-augmented generation.
           </p>
         </div>
@@ -126,10 +126,10 @@ export default function KnowledgeBaseUpload() {
       <div className="mt-8 space-y-6">
         {/* Drag & Drop Zone */}
         <div
-          className={`relative rounded-2xl border-2 border-dashed transition-all duration-200 ease-in-out p-8 text-center ${
+          className={`relative rounded-lg border-2 border-dashed transition-colors duration-200 p-8 text-center ${
             dragActive
-              ? 'border-indigo-500 bg-indigo-50/50 scale-[0.999]'
-              : 'border-gray-300 bg-gray-50/50 hover:bg-gray-50 hover:border-gray-400'
+              ? 'border-[#2E5AAC] bg-[#EEF2FA]'
+              : 'border-[#D0D5DD] bg-[#FAFBFC] hover:border-[#98A2B3]'
           }`}
           onDragEnter={(e) => {
             e.preventDefault()
@@ -157,22 +157,21 @@ export default function KnowledgeBaseUpload() {
         >
           <div className="flex flex-col sm:flex-row items-center justify-between gap-6 max-w-3xl mx-auto">
             <div className="flex items-center gap-4 text-left">
-              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-indigo-600 text-white shadow-lg shadow-indigo-600/20">
+              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg bg-[#2E5AAC] text-white">
                 <svg className="h-7 w-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                 </svg>
               </div>
               <div>
-                <h3 className="font-semibold text-gray-900 text-base">Drag and drop your training file here</h3>
-                <p className="text-xs text-gray-500 mt-1 leading-relaxed">
-                  Supported formats: <span className="font-medium text-gray-700">{allowedUiExtensions.join(', ')}</span>. 
-                  (Backend currently accepts <span className="font-semibold text-indigo-600">{allowedBackendExtensions.join(', ')}</span>).
+                <h3 className="font-medium text-[#101828] text-base">Drag and drop your training file here</h3>
+                <p className="text-xs text-[#667085] mt-1 leading-relaxed">
+                  Supported formats: <span className="font-medium text-[#101828]">{allowedUiExtensions.join(', ')}</span>.
                 </p>
               </div>
             </div>
 
             <div className="shrink-0">
-              <label className="relative inline-flex items-center justify-center cursor-pointer rounded-xl bg-white border border-gray-300 px-5 py-2.5 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50 hover:border-gray-400 focus-within:ring-2 focus-within:ring-indigo-500 focus-within:ring-offset-2 transition-all">
+              <label className="relative inline-flex items-center justify-center cursor-pointer rounded-lg bg-white border border-[#D0D5DD] px-5 py-2.5 text-sm font-medium text-[#101828] hover:bg-[#F2F4F7] focus-within:ring-2 focus-within:ring-[#2E5AAC]/30 transition-colors">
                 <input
                   type="file"
                   className="sr-only"
@@ -183,7 +182,7 @@ export default function KnowledgeBaseUpload() {
                     onPickFile(file)
                   }}
                 />
-                <svg className="w-4 h-4 mr-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-4 h-4 mr-2 text-[#667085]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                 </svg>
                 Browse Files
@@ -193,20 +192,20 @@ export default function KnowledgeBaseUpload() {
 
           {/* Selected File Card */}
           {state.file && (
-            <div className="mt-6 rounded-xl border border-indigo-100 bg-white p-4 shadow-sm flex items-center justify-between text-left transition-all animate-fadeIn">
+            <div className="mt-6 rounded-lg border border-[#D6E0F2] bg-white p-4 flex items-center justify-between text-left transition-all animate-fadeIn">
               <div className="flex items-center gap-3.5 min-w-0">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[#EEF2FA] text-[#2E5AAC]">
                   <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
                 </div>
                 <div className="min-w-0 flex-1">
-                  <div className="text-xs font-semibold uppercase tracking-wider text-indigo-600">Ready for Ingestion</div>
-                  <div className="font-medium text-gray-900 truncate text-sm mt-0.5">{state.fileName}</div>
+                  <div className="text-xs font-medium uppercase tracking-wider text-[#2E5AAC]">Ready for Ingestion</div>
+                  <div className="font-medium text-[#101828] truncate text-sm mt-0.5">{state.fileName}</div>
                 </div>
               </div>
               <div className="shrink-0 text-right pl-4">
-                <span className="inline-block rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-600">
+                <span className="inline-block rounded-full bg-[#F2F4F7] px-3 py-1 text-xs font-medium text-[#667085]">
                   {sizeLabel}
                 </span>
               </div>
@@ -220,7 +219,7 @@ export default function KnowledgeBaseUpload() {
             type="button"
             onClick={onUpload}
             disabled={loading || !state.file}
-            className="inline-flex items-center justify-center rounded-xl bg-indigo-600 px-6 py-3.5 text-sm font-semibold text-white shadow-md shadow-indigo-600/20 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none transition-all duration-150"
+            className="inline-flex items-center justify-center rounded-lg bg-[#2E5AAC] px-6 py-3.5 text-sm font-medium text-white hover:bg-[#274D8F] focus:outline-none focus:ring-2 focus:ring-[#2E5AAC]/30 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             {loading ? (
               <>
@@ -240,52 +239,52 @@ export default function KnowledgeBaseUpload() {
             )}
           </button>
 
-          <div className="flex items-center gap-2 text-xs text-gray-500 sm:justify-end">
-            <svg className="h-4 w-4 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="flex items-center gap-2 text-xs text-[#667085] sm:justify-end">
+            <svg className="h-4 w-4 text-[#98A2B3] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            <span>Tip: Test retrieval using <code className="font-mono bg-gray-100 text-gray-800 px-1.5 py-0.5 rounded border border-gray-200">POST /api/knowledge/query</code></span>
+            <span>Documents are embedded and indexed for AI retrieval.</span>
           </div>
         </div>
 
         {/* Error Notification */}
         {error && (
-          <div className="rounded-xl bg-rose-50 border border-rose-200 p-4 flex items-start gap-3.5 transition-all animate-fadeIn">
-            <div className="shrink-0 text-rose-500 mt-0.5">
+          <div className="rounded-lg border border-[#F6B5B0] bg-[#FDEBEA] p-4 flex items-start gap-3.5 transition-all animate-fadeIn">
+            <div className="shrink-0 text-[#F04438] mt-0.5">
               <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
             <div>
-              <h4 className="text-sm font-semibold text-rose-900">Upload Failed</h4>
-              <p className="text-sm text-rose-700 mt-1 leading-relaxed">{error}</p>
+              <h4 className="text-sm font-semibold text-[#F04438]">Upload Failed</h4>
+              <p className="text-sm text-[#F04438]/90 mt-1 leading-relaxed">{error}</p>
             </div>
           </div>
         )}
 
         {/* Success Notification */}
         {success && (
-          <div className="rounded-2xl bg-emerald-50/80 border border-emerald-200 p-6 transition-all animate-fadeIn shadow-sm">
+          <div className="rounded-lg bg-[#E7F7EF] border border-[#B7E8CF] p-6 transition-all animate-fadeIn">
             <div className="flex items-center gap-3 mb-4">
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-600 text-white shadow-sm">
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#12B76A] text-white">
                 <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
                 </svg>
               </div>
               <div>
-                <h4 className="text-base font-bold text-emerald-950">Document Successfully Ingested</h4>
-                <p className="text-xs text-emerald-800">Your embeddings are indexed and ready for AI retrieval.</p>
+                <h4 className="text-base font-semibold text-[#0F6E44]">Document Successfully Ingested</h4>
+                <p className="text-xs text-[#167450]">Your embeddings are indexed and ready for AI retrieval.</p>
               </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-              <div className="rounded-xl bg-white border border-emerald-200/80 p-3.5 shadow-sm">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-gray-400 block mb-1">Stored in Database</span>
-                <span className="text-sm font-mono text-gray-900 font-medium break-all">{success.chroma_collection_id}</span>
+              <div className="rounded-lg bg-white border border-[#B7E8CF] p-3.5">
+                <span className="text-[11px] font-medium uppercase tracking-wider text-[#667085] block mb-1">Stored in Database</span>
+                <span className="text-sm font-mono text-[#101828] font-medium break-all">{success.chroma_collection_id}</span>
               </div>
-              <div className="rounded-xl bg-white border border-emerald-200/80 p-3.5 shadow-sm">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-gray-400 block mb-1">Total Vector Chunks</span>
-                <span className="text-sm font-mono font-bold text-emerald-600">{success.chunk_count} chunks created</span>
+              <div className="rounded-lg bg-white border border-[#B7E8CF] p-3.5">
+                <span className="text-[11px] font-medium uppercase tracking-wider text-[#667085] block mb-1">Total Vector Chunks</span>
+                <span className="text-sm font-mono font-semibold text-[#12B76A]">{success.chunk_count} chunks created</span>
               </div>
             </div>
           </div>
