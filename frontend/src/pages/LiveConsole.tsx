@@ -4,24 +4,24 @@ import {
 } from '../services/api'
 import { useSession, type ChatMessage } from '../context/SessionContext'
 
-// ─── Emotion Color Map ────────────────────────────────────────────
+// ─── Emotion Color Map (tokenized, disciplined 3-tone + neutral) ──
 const EMOTION_COLORS: Record<string, string> = {
-  angry: 'bg-red-50 border-red-200 text-red-700',
-  frustrated: 'bg-orange-50 border-orange-200 text-orange-700',
-  anxious: 'bg-amber-50 border-amber-200 text-amber-700',
-  confused: 'bg-yellow-50 border-yellow-200 text-yellow-700',
-  disappointed: 'bg-rose-50 border-rose-200 text-rose-700',
-  neutral: 'bg-slate-50 border-slate-200 text-slate-700',
-  calm: 'bg-emerald-50 border-emerald-200 text-emerald-700',
-  satisfied: 'bg-green-50 border-green-200 text-green-700',
-  urgent: 'bg-purple-50 border-purple-200 text-purple-700',
+  angry: 'bg-[#FDEBEA] border-[#F6B5B0] text-[#F04438]',
+  frustrated: 'bg-[#FDEBEA] border-[#F6B5B0] text-[#F04438]',
+  urgent: 'bg-[#FDEBEA] border-[#F6B5B0] text-[#F04438]',
+  anxious: 'bg-[#FEF3E2] border-[#FAD9A8] text-[#F79009]',
+  confused: 'bg-[#FEF3E2] border-[#FAD9A8] text-[#F79009]',
+  disappointed: 'bg-[#FEF3E2] border-[#FAD9A8] text-[#F79009]',
+  neutral: 'bg-[#F2F4F7] border-[#E4E7EC] text-[#667085]',
+  calm: 'bg-[#E7F7EF] border-[#B7E8CF] text-[#12B76A]',
+  satisfied: 'bg-[#E7F7EF] border-[#B7E8CF] text-[#12B76A]',
 }
 
 const TREND_ICONS: Record<string, string> = {
-  improving: '📈',
-  declining: '📉',
-  stable: '➡️',
-  baseline: '🆕',
+  improving: '↑',
+  declining: '↓',
+  stable: '→',
+  baseline: '·',
 }
 
 // ─── Main Component ───────────────────────────────────────────────
@@ -61,14 +61,7 @@ export default function LiveConsole() {
 
 // Client-side typewriter over the complete customer message (not backend streaming)
   const typingRef = useRef<number | null>(null)
-  // Generation token: bumped on every new typewriter animation so any in-flight
-  // timer from a previous animation is invalidated instead of resuming and
-  // corrupting the current one.
   const typingGenRef = useRef<number>(0)
-  // Identity ("turnIndex|content-prefix") of the most recent customer message that
-  // has ALREADY been animated. We key the animation on the identity of the latest
-  // customer message — NOT a running count — so it reliably re-arms on every genuine
-  // new customer message and never re-animates an already-revealed one.
   const lastAnimatedIdRef = useRef<string | null>(null)
   const [typingText, setTypingText] = useState('')
   const [isTyping, setIsTyping] = useState(false)
@@ -76,10 +69,6 @@ export default function LiveConsole() {
 const messagesEndRef = useRef<HTMLDivElement>(null)
 
   // ─── Defensive remount reset ──────────────────────────────────
-  // When the user navigates away mid-turn/mid-typing and comes back, this
-  // component remounts. Any stale typewriter or pending-disabled state would
-  // otherwise leave the reply input locked. Reset to a clean state on mount so
-  // the console is always usable after navigation.
   useEffect(() => {
     typingGenRef.current += 1
     setIsTyping(false)
@@ -97,34 +86,17 @@ const messagesEndRef = useRef<HTMLDivElement>(null)
     })
   }, [messages, typingText, isTyping])
 
-// ─── Typewriter effect: reveal the latest NEW customer message word-by-word ──
-  // Pure frontend visual; no backend calls. Runs only when a customer message with a
-  // NEW identity appears in context (from submitTurn's single conversationTurn call).
-  //
-  // IMPORTANT: this effect deliberately depends ONLY on `messages` — NOT on
-  // `isTyping`. Previously `isTyping` was in the dependency array, which caused a
-  // fatal self-cancel: calling `setIsTyping(true)` re-ran the effect, its cleanup
-  // cleared the just-scheduled animation timer, and the effect bailed via the
-  // `if (isTyping) return` guard. That left `isTyping` stuck `true` forever, which
-  // permanently disabled the reply input/send button (the reported freeze after
-  // one turn). Now a generation token invalidates stale timers instead, so the
-  // animation always completes and `isTyping` reliably returns to `false`.
+// ─── Typewriter effect ──
   useEffect(() => {
-    // Find the most recent customer message and compute a stable identity.
     const lastCustomer = [...messages].reverse().find((m) => m.role === 'customer')
     if (!lastCustomer) return
     const fullText = lastCustomer.content ?? ''
     if (!fullText) return
 
     const identity = `${lastCustomer.turnIndex}|${fullText.slice(0, 40)}`
-    // If this exact message was already animated, don't run again (prevents
-    // re-animating on unrelated re-renders like latestIntentSentiment arriving).
     if (lastAnimatedIdRef.current === identity) return
 
-    // Bump the generation token so any in-flight timer from a previous animation
-    // is invalidated the moment we start a new one.
     const gen = (typingGenRef.current += 1)
-    // Mark it as animated BEFORE starting so re-entry is blocked during the loop.
     lastAnimatedIdRef.current = identity
 
     setIsTyping(true)
@@ -133,7 +105,7 @@ const messagesEndRef = useRef<HTMLDivElement>(null)
     let idx = 0
 
     const tick = () => {
-      if (typingGenRef.current !== gen) return // stale animation — abort
+      if (typingGenRef.current !== gen) return
       idx += 1
       setTypingText(words.slice(0, idx).join(' '))
       if (idx < words.length) {
@@ -146,11 +118,8 @@ const messagesEndRef = useRef<HTMLDivElement>(null)
     }
     typingRef.current = window.setTimeout(tick, 50)
 
-    // Safety: never let the typewriter lock the input forever. For very long
-    // customer messages (or if a timer is lost), force isTyping=false shortly
-    // after the animation should have finished so the reply box re-enables.
     const forceDone = window.setTimeout(() => {
-      if (typingGenRef.current !== gen) return // stale animation — ignore
+      if (typingGenRef.current !== gen) return
       setIsTyping(false)
       setTypingText('')
     }, words.length * 28 + 1500)
@@ -158,10 +127,8 @@ const messagesEndRef = useRef<HTMLDivElement>(null)
       if (typingRef.current) window.clearTimeout(typingRef.current)
       window.clearTimeout(forceDone)
     }
-    // Intentionally only `messages`: re-running on `isTyping` caused the freeze.
   }, [messages])
 
-  // Cleanup the typewriter timer on unmount
   useEffect(() => {
     return () => {
       if (typingRef.current) window.clearTimeout(typingRef.current)
@@ -207,7 +174,7 @@ const messagesEndRef = useRef<HTMLDivElement>(null)
     }
   }
 
-  // ─── Send Agent Message (single conversationTurn call via context) ──
+  // ─── Send Agent Message ──
   async function handleSendMessage(e?: React.FormEvent) {
     e?.preventDefault()
     if (!agentInput.trim() || !isSessionActive || turnStatus === 'pending') return
@@ -216,7 +183,6 @@ const messagesEndRef = useRef<HTMLDivElement>(null)
     setAgentInput('')
 
     try {
-      // submitTurn calls POST /api/conversation/turn ONCE and updates context state.
       await submitTurn(agentMsg)
     } catch {
       // turnStatus is now "error" in context; the inline error banner will render.
@@ -228,28 +194,26 @@ const messagesEndRef = useRef<HTMLDivElement>(null)
     <div className="flex flex-col min-h-0 h-full max-w-[1600px] mx-auto w-full pb-12">
 
       {/* ── Header Banner ── */}
-      <div className="shrink-0 bg-white border border-gray-200 rounded-2xl p-5 md:p-6 relative overflow-hidden shadow-sm mb-6">
-        <div className="absolute -top-20 -left-20 h-56 w-56 rounded-full bg-emerald-500/10 blur-3xl pointer-events-none" />
-        <div className="absolute -bottom-20 -right-20 h-56 w-56 rounded-full bg-indigo-500/10 blur-3xl pointer-events-none" />
-        <div className="relative flex items-center justify-between gap-4 flex-wrap">
+      <div className="shrink-0 bg-white border border-[#E4E7EC] rounded-[8px] p-5 md:p-6 mb-6">
+        <div className="flex items-center justify-between gap-4 flex-wrap">
           <div>
-            <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50/70 px-3.5 py-1 text-xs font-semibold text-emerald-800 shadow-sm">
-              <span className={`h-2 w-2 rounded-full ${isSessionActive ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'}`} />
+            <div className="inline-flex items-center gap-2 rounded-full border border-[#E4E7EC] bg-white px-3.5 py-1 text-xs font-medium text-[#667085]">
+              <span className={`h-1.5 w-1.5 rounded-full ${isSessionActive ? 'bg-[#12B76A]' : 'bg-[#C7CED9]'}`} />
               {isSessionActive ? 'Live Session Active' : 'Configure New Session'}
             </div>
-            <h1 className="mt-2.5 text-2xl md:text-3xl font-extrabold tracking-tight text-slate-900">
-              Live <span className="text-emerald-600">Support</span> Console
+            <h1 className="mt-2.5 text-2xl md:text-3xl font-semibold tracking-tight text-[#101828]">
+              Live Support Console
             </h1>
-            <p className="mt-1 text-sm text-slate-500 max-w-3xl">
+            <p className="mt-1 text-sm text-[#667085] max-w-3xl">
               {isSessionActive
                 ? `Simulator Mode • Session ID: ${(sessionId ?? '').slice(0, 8)}... • Thread ID: ${(threadId ?? '').slice(0, 8)}...`
-                : 'Configure a session below to start simulating real customer support interactions and testing your AI RAG pipelines.'}
+                : 'Configure a session to start simulating real customer support interactions and testing the AI RAG pipeline.'}
             </p>
           </div>
           {isSessionActive && (
             <button
               onClick={endSession}
-              className="shrink-0 rounded-xl border border-rose-200 bg-rose-50 text-rose-700 px-5 py-2.5 text-sm font-semibold hover:bg-rose-100 hover:border-rose-300 shadow-sm transition-all"
+              className="shrink-0 rounded-lg border border-[#F6B5B0] bg-white text-[#F04438] px-5 py-2.5 text-sm font-medium hover:bg-[#FDEBEA] transition-colors"
             >
               <span className="flex items-center gap-2">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -264,17 +228,17 @@ const messagesEndRef = useRef<HTMLDivElement>(null)
 
       {/* ── Session Config (shown when no active session) ── */}
       {!isSessionActive && (
-        <section className="bg-white border border-gray-200 rounded-2xl shadow-sm p-6 md:p-8 max-w-2xl mx-auto w-full">
+        <section className="bg-white border border-[#E4E7EC] rounded-[8px] p-6 md:p-8 max-w-2xl mx-auto w-full">
 
           {/* ── Mode Toggle: New Session vs Load Existing ── */}
-          <div className="flex rounded-xl border border-gray-200 p-1 bg-slate-50 mb-6">
+          <div className="flex rounded-lg border border-[#E4E7EC] p-1 bg-[#F2F4F7] mb-6">
             <button
               type="button"
               onClick={() => { setSessionMode('new'); setError(null); }}
-              className={`flex-1 rounded-lg py-2.5 text-sm font-semibold transition-all ${
+              className={`flex-1 rounded-md py-2.5 text-sm font-medium transition-colors ${
                 sessionMode === 'new'
-                  ? 'bg-white text-emerald-700 shadow-sm border border-emerald-200'
-                  : 'text-slate-500 hover:text-slate-700'
+                  ? 'bg-white text-[#2E5AAC] border border-[#D6E0F2]'
+                  : 'text-[#667085] hover:text-[#101828]'
               }`}
             >
               <span className="flex items-center justify-center gap-2">
@@ -287,10 +251,10 @@ const messagesEndRef = useRef<HTMLDivElement>(null)
             <button
               type="button"
               onClick={() => { setSessionMode('existing'); setError(null); }}
-              className={`flex-1 rounded-lg py-2.5 text-sm font-semibold transition-all ${
+              className={`flex-1 rounded-md py-2.5 text-sm font-medium transition-colors ${
                 sessionMode === 'existing'
-                  ? 'bg-white text-emerald-700 shadow-sm border border-emerald-200'
-                  : 'text-slate-500 hover:text-slate-700'
+                  ? 'bg-white text-[#2E5AAC] border border-[#D6E0F2]'
+                  : 'text-[#667085] hover:text-[#101828]'
               }`}
             >
               <span className="flex items-center justify-center gap-2">
@@ -306,11 +270,11 @@ const messagesEndRef = useRef<HTMLDivElement>(null)
             <form onSubmit={handleStartSession} className="space-y-6">
               <div className="space-y-5">
                 <div>
-                  <label className="block text-sm font-semibold text-gray-800 mb-1.5">Conversation Mode</label>
+                  <label className="block text-sm font-medium text-[#101828] mb-1.5">Conversation Mode</label>
                   <select
                     value={mode}
                     onChange={(e) => setMode(e.target.value as CreateSessionModeBackend)}
-                    className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm font-medium text-gray-900 bg-white shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+                    className="w-full rounded-lg border border-[#D0D5DD] px-4 py-3 text-sm font-medium text-[#101828] bg-white focus:border-[#2E5AAC] focus:outline-none focus:ring-2 focus:ring-[#2E5AAC]/20 disabled:bg-[#F2F4F7]"
                     disabled={loading}
                   >
                     <option value="Simulator">Simulator — AI-Generated Customer</option>
@@ -320,14 +284,14 @@ const messagesEndRef = useRef<HTMLDivElement>(null)
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-gray-800 mb-1.5">
-                    Product / Service Context <span className="text-rose-500">*</span>
+                  <label className="block text-sm font-medium text-[#101828] mb-1.5">
+                    Product / Service Context <span className="text-[#F04438]">*</span>
                   </label>
                   <input
                     type="text"
                     value={productContext}
                     onChange={(e) => setProductContext(e.target.value)}
-                    className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm text-gray-900 placeholder-gray-400 bg-white shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+                    className="w-full rounded-lg border border-[#D0D5DD] px-4 py-3 text-sm text-[#101828] placeholder-[#98A2B3] bg-white focus:border-[#2E5AAC] focus:outline-none focus:ring-2 focus:ring-[#2E5AAC]/20 disabled:bg-[#F2F4F7]"
                     placeholder="e.g., Enterprise SaaS Billing Support"
                     required
                     disabled={loading}
@@ -335,27 +299,27 @@ const messagesEndRef = useRef<HTMLDivElement>(null)
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-gray-800 mb-1.5">
-                    Persona <span className="text-xs font-normal text-gray-400">(Optional)</span>
+                  <label className="block text-sm font-medium text-[#101828] mb-1.5">
+                    Persona <span className="text-xs font-normal text-[#667085]">(Optional)</span>
                   </label>
                   <input
                     type="text"
                     value={persona}
                     onChange={(e) => setPersona(e.target.value)}
-                    className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm text-gray-900 placeholder-gray-400 bg-white shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+                    className="w-full rounded-lg border border-[#D0D5DD] px-4 py-3 text-sm text-[#101828] placeholder-[#98A2B3] bg-white focus:border-[#2E5AAC] focus:outline-none focus:ring-2 focus:ring-[#2E5AAC]/20 disabled:bg-[#F2F4F7]"
                     placeholder="e.g., Frustrated Customer demanding a refund"
                     disabled={loading}
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-gray-800 mb-1.5">
-                    Scenario <span className="text-rose-500">*</span>
+                  <label className="block text-sm font-medium text-[#101828] mb-1.5">
+                    Scenario <span className="text-[#F04438]">*</span>
                   </label>
                   <textarea
                     value={scenario}
                     onChange={(e) => setScenario(e.target.value)}
-                    className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm text-gray-900 placeholder-gray-400 bg-white shadow-sm min-h-[120px] focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 resize-y"
+                    className="w-full rounded-lg border border-[#D0D5DD] px-4 py-3 text-sm text-[#101828] placeholder-[#98A2B3] bg-white min-h-[120px] focus:border-[#2E5AAC] focus:outline-none focus:ring-2 focus:ring-[#2E5AAC]/20 resize-y disabled:bg-[#F2F4F7]"
                     placeholder="Describe the exact situation the customer is facing..."
                     required
                     disabled={loading}
@@ -366,7 +330,7 @@ const messagesEndRef = useRef<HTMLDivElement>(null)
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full inline-flex items-center justify-center rounded-xl bg-emerald-600 px-8 py-3.5 text-sm font-semibold text-white shadow-md shadow-emerald-600/20 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                className="w-full inline-flex items-center justify-center rounded-lg bg-[#2E5AAC] px-8 py-3.5 text-sm font-medium text-white hover:bg-[#274D8F] focus:outline-none focus:ring-2 focus:ring-[#2E5AAC]/30 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 {loading ? (
                   <>
@@ -391,19 +355,19 @@ const messagesEndRef = useRef<HTMLDivElement>(null)
             <form onSubmit={handleLoadExistingSession} className="space-y-6">
               <div className="space-y-5">
                 <div>
-                  <label className="block text-sm font-semibold text-gray-800 mb-1.5">
-                    Session ID <span className="text-rose-500">*</span>
+                  <label className="block text-sm font-medium text-[#101828] mb-1.5">
+                    Session ID <span className="text-[#F04438]">*</span>
                   </label>
                   <input
                     type="text"
                     value={existingSessionId}
                     onChange={(e) => setExistingSessionId(e.target.value)}
-                    className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm text-gray-900 placeholder-gray-400 bg-white shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+                    className="w-full rounded-lg border border-[#D0D5DD] px-4 py-3 text-sm text-[#101828] placeholder-[#98A2B3] bg-white focus:border-[#2E5AAC] focus:outline-none focus:ring-2 focus:ring-[#2E5AAC]/20 disabled:bg-[#F2F4F7]"
                     placeholder="Paste the session ID from Session Configuration..."
                     required
                     disabled={loading}
                   />
-                  <p className="text-xs text-slate-500 mt-2">
+                  <p className="text-xs text-[#667085] mt-2">
                     Enter the session ID generated by the <strong>Session Configuration</strong> page to reuse that session in the Live Console.
                   </p>
                 </div>
@@ -412,7 +376,7 @@ const messagesEndRef = useRef<HTMLDivElement>(null)
               <button
                 type="submit"
                 disabled={loading || !existingSessionId.trim()}
-                className="w-full inline-flex items-center justify-center rounded-xl bg-emerald-600 px-8 py-3.5 text-sm font-semibold text-white shadow-md shadow-emerald-600/20 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                className="w-full inline-flex items-center justify-center rounded-lg bg-[#2E5AAC] px-8 py-3.5 text-sm font-medium text-white hover:bg-[#274D8F] focus:outline-none focus:ring-2 focus:ring-[#2E5AAC]/30 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 {loading ? (
                   <>
@@ -435,15 +399,15 @@ const messagesEndRef = useRef<HTMLDivElement>(null)
           )}
 
           {error && (
-            <div className="mt-6 rounded-xl bg-rose-50 border border-rose-200 p-4 flex items-start gap-3.5">
-              <div className="shrink-0 text-rose-500 mt-0.5">
+            <div className="mt-6 rounded-lg border border-[#F6B5B0] bg-[#FDEBEA] p-4 flex items-start gap-3.5">
+              <div className="shrink-0 text-[#F04438] mt-0.5">
                 <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
               <div>
-                <h4 className="text-sm font-semibold text-rose-900">Error</h4>
-                <p className="text-sm text-rose-700 mt-1 leading-relaxed">{error}</p>
+                <h4 className="text-sm font-semibold text-[#F04438]">Error</h4>
+                <p className="text-sm text-[#F04438]/90 mt-1 leading-relaxed">{error}</p>
               </div>
             </div>
           )}
@@ -454,17 +418,17 @@ const messagesEndRef = useRef<HTMLDivElement>(null)
       {isSessionActive && (
         <div className="flex-1 flex flex-col gap-6 w-full">
 
-          {/* ── Non-silent turn error banner (task 1 Q4 fix) ── */}
+          {/* ── Non-silent turn error banner (calm) ── */}
           {turnStatus === 'error' && (
-            <div className="rounded-xl bg-rose-50 border border-rose-200 p-4 flex items-start gap-3.5">
-              <div className="shrink-0 text-rose-500 mt-0.5">
+            <div className="rounded-lg border border-[#F6B5B0] bg-[#FDEBEA] p-4 flex items-start gap-3.5">
+              <div className="shrink-0 text-[#F04438] mt-0.5">
                 <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
               <div>
-                <h4 className="text-sm font-semibold text-rose-900">This turn failed to process</h4>
-                <p className="text-sm text-rose-700 mt-1 leading-relaxed">
+                <h4 className="text-sm font-semibold text-[#F04438]">This turn failed to process</h4>
+                <p className="text-sm text-[#F04438]/90 mt-1 leading-relaxed">
                   The conversation could not be analyzed. Please try sending your reply again.
                 </p>
               </div>
@@ -474,71 +438,64 @@ const messagesEndRef = useRef<HTMLDivElement>(null)
           {/* Top Half: 50/50 Split for Chat and Intent Metrics */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
 
-            {/* Left Side: Chat Interface (h-[600px] fixed height) */}
-            <div className="bg-white border border-gray-200 rounded-2xl shadow-sm flex flex-col h-[600px] overflow-hidden">
-              <div className="shrink-0 border-b border-gray-100 px-5 py-4 flex items-center justify-between bg-slate-50/50">
+            {/* Left Side: Chat Interface */}
+            <div className="bg-white border border-[#E4E7EC] rounded-[8px] flex flex-col lg:h-[600px] min-h-[480px] overflow-hidden">
+              <div className="shrink-0 border-b border-[#E4E7EC] px-5 py-4 flex items-center justify-between bg-white">
                 <div className="flex items-center gap-3">
-                  <div className="h-8 w-8 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600">
+                  <div className="h-8 w-8 rounded-full bg-[#EEF2FA] flex items-center justify-center text-[#2E5AAC]">
                     <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                     </svg>
                   </div>
                   <div>
-                    <h2 className="font-bold text-gray-900 text-sm">Customer Interaction</h2>
-                    <p className="text-[11px] text-gray-500 mt-0.5">Turn {messages.filter(m => m.role !== 'system').length} Tracker</p>
+                    <h2 className="font-semibold text-[#101828] text-sm">Customer Interaction</h2>
+                    <p className="text-[11px] text-[#667085] mt-0.5">Turn {messages.filter(m => m.role !== 'system').length} Tracker</p>
                   </div>
                 </div>
                 {turnStatus === 'pending' && (
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 border border-emerald-200 px-2.5 py-1 text-[11px] font-semibold text-emerald-700">
-                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                    AI Generating...
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-[#D6E0F2] bg-[#EEF2FA] px-2.5 py-1 text-[11px] font-medium text-[#2E5AAC]">
+                    <span className="h-1.5 w-1.5 rounded-full bg-[#2E5AAC] animate-pulse" />
+                    Analyzing turn...
                   </span>
                 )}
               </div>
 
               {/* Scrollable Messages Area */}
-              <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4 bg-slate-50/30">
+              <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4 bg-[#FAFBFC]">
                 {messages.length === 0 && !isTyping && (
                   <div className="flex items-center justify-center h-full">
                     <div className="text-center">
-                      <div className="text-3xl mb-3 opacity-50">💬</div>
-                      <p className="text-sm font-medium text-slate-500">Awaiting Interaction</p>
-                      <p className="text-xs text-slate-400 mt-1">Type a response below to start.</p>
+                      <div className="mx-auto h-12 w-12 rounded-full bg-[#F2F4F7] flex items-center justify-center mb-3">
+                        <svg className="h-6 w-6 text-[#B9C1CF]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                        </svg>
+                      </div>
+                      <p className="text-sm font-medium text-[#667085]">Awaiting interaction</p>
+                      <p className="text-xs text-[#98A2B3] mt-1">Type a response below to start.</p>
                     </div>
                   </div>
                 )}
 
                 {messages.map((msg, idx) => {
-                  // Render the last customer message with the typewriter reveal if it's the newest.
                   const isLastCustomer = msg.role === 'customer' && idx === messages.length - 1
                   const displayText = isLastCustomer && typingText ? typingText : msg.content
                   return (
                     <div key={idx} className={`flex ${msg.role === 'customer' ? 'justify-start' : msg.role === 'agent' ? 'justify-end' : 'justify-center'}`}>
-                      <div className={`max-w-[85%] rounded-2xl p-4 shadow-sm ${
-                        msg.role === 'customer' ? 'bg-white border border-slate-200 text-slate-900 rounded-tl-sm'
-                        : msg.role === 'agent' ? 'bg-emerald-600 text-white rounded-tr-sm'
-                        : 'bg-amber-50 border border-amber-200 text-amber-900'
-                      }`}>
+                      <div className={`max-w-[85%] rounded-lg px-4 py-3 ${msg.role === 'customer' ? 'bg-white border border-[#E4E7EC] text-[#101828]' : msg.role === 'agent' ? 'bg-[#2E5AAC] text-white' : 'bg-[#FEF3E2] border border-[#FAD9A8] text-[#7A4E00]'}`}>
                         <div className="flex items-center justify-between gap-3 mb-1.5">
-                          <span className={`text-[10px] font-bold uppercase tracking-wider ${
-                            msg.role === 'customer' ? 'text-slate-500' : msg.role === 'agent' ? 'text-emerald-100' : 'text-amber-600'
-                          }`}>
+                          <span className={`text-[10px] font-semibold uppercase tracking-wider ${msg.role === 'customer' ? 'text-[#667085]' : msg.role === 'agent' ? 'text-[#E5EBF7]' : 'text-[#B26A00]'}`}>
                             {msg.role === 'customer' ? 'Customer' : msg.role === 'agent' ? 'You' : 'System'}
                           </span>
                           {msg.frustrationLevel !== undefined && msg.frustrationLevel !== null && (
-                            <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${
-                              msg.frustrationLevel > 60 ? 'bg-red-50 border-red-200 text-red-700' :
-                              msg.frustrationLevel > 35 ? 'bg-amber-50 border-amber-200 text-amber-700' :
-                              'bg-emerald-50 border-emerald-200 text-emerald-700'
-                            }`}>
-                              😤 Level: {msg.frustrationLevel}
+                            <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full border ${msg.frustrationLevel > 60 ? 'bg-[#FDEBEA] border-[#F6B5B0] text-[#F04438]' : msg.frustrationLevel > 35 ? 'bg-[#FEF3E2] border-[#FAD9A8] text-[#F79009]' : 'bg-[#E7F7EF] border-[#B7E8CF] text-[#12B76A]'}`}>
+                              Level: {msg.frustrationLevel}
                             </span>
                           )}
                         </div>
-                        <p className={`text-[13px] leading-relaxed ${msg.role === 'agent' ? 'text-white' : 'text-slate-800'}`}>
+                        <p className={`text-[13px] leading-relaxed ${msg.role === 'agent' ? 'text-white' : 'text-[#101828]'}`}>
                           {displayText}
                           {isLastCustomer && isTyping && (
-                            <span className="inline-block w-1 h-3 bg-emerald-500 ml-0.5 animate-pulse align-baseline" />
+                            <span className="inline-block w-1 h-3 bg-[#2E5AAC] ml-0.5 animate-pulse align-baseline" />
                           )}
                         </p>
                       </div>
@@ -546,26 +503,24 @@ const messagesEndRef = useRef<HTMLDivElement>(null)
                   )
                 })}
 
-                {/* Single typewriter display — revealed in-place inside the newest
-                    customer bubble above (via displayText). No redundant bubble. */}
                 <div ref={messagesEndRef} />
               </div>
 
               {/* Agent Input Bar */}
-              <div className="shrink-0 border-t border-gray-100 p-4 bg-white">
+              <div className="shrink-0 border-t border-[#E4E7EC] p-4 bg-white">
                 <form onSubmit={handleSendMessage} className="flex gap-3">
                   <input
                     type="text"
                     value={agentInput}
                     onChange={(e) => setAgentInput(e.target.value)}
                     placeholder="Reply to customer..."
-                    className="flex-1 rounded-xl border border-gray-300 px-4 py-3 text-sm text-gray-900 placeholder-gray-400 bg-slate-50 focus:bg-white shadow-inner focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 transition-colors"
+                    className="flex-1 rounded-lg border border-[#D0D5DD] px-4 py-3 text-sm text-[#101828] placeholder-[#98A2B3] bg-white focus:border-[#2E5AAC] focus:outline-none focus:ring-2 focus:ring-[#2E5AAC]/20 transition-colors disabled:bg-[#F2F4F7]"
                     disabled={turnStatus === 'pending' || isTyping}
                   />
                   <button
                     type="submit"
                     disabled={!agentInput.trim() || turnStatus === 'pending' || isTyping}
-                    className="inline-flex items-center justify-center rounded-xl bg-emerald-600 px-6 py-3 text-sm font-semibold text-white shadow-md shadow-emerald-600/25 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                    className="inline-flex items-center justify-center rounded-lg bg-[#2E5AAC] px-6 py-3 text-sm font-medium text-white hover:bg-[#274D8F] focus:outline-none focus:ring-2 focus:ring-[#2E5AAC]/30 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   >
                     {turnStatus === 'pending' ? (
                       <svg className="animate-spin h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
@@ -582,60 +537,54 @@ const messagesEndRef = useRef<HTMLDivElement>(null)
               </div>
             </div>
 
-            {/* Right Side: Intent & Sentiment Dashboard (h-[600px] fixed height) */}
-            <div className="bg-white border border-gray-200 rounded-2xl shadow-sm h-[600px] flex flex-col overflow-hidden">
-              <div className="shrink-0 border-b border-gray-100 px-6 py-5 bg-slate-50/50">
-                <h3 className="font-bold text-gray-900 text-base flex items-center gap-2.5">
-                  <span className="w-2 h-2 rounded-full bg-indigo-500" />
+            {/* Right Side: Intent & Sentiment Dashboard */}
+            <div className="bg-white border border-[#E4E7EC] rounded-[8px] lg:h-[600px] min-h-[480px] flex flex-col overflow-hidden">
+              <div className="shrink-0 border-b border-[#E4E7EC] px-6 py-5 bg-white">
+                <h3 className="font-semibold text-[#101828] text-base flex items-center gap-2.5">
+                  <span className="w-2 h-2 rounded-full bg-[#2E5AAC]" />
                   Real-Time AI Intent & Sentiment
                 </h3>
-                <p className="text-xs text-slate-500 mt-1">Live metrics evaluating the customer's current emotional state.</p>
+                <p className="text-xs text-[#667085] mt-1">Live metrics evaluating the customer's current emotional state.</p>
               </div>
 
-              <div className="flex-1 p-6 flex flex-col justify-center bg-slate-50/20">
+              <div className="flex-1 p-6 flex flex-col justify-center bg-[#FAFBFC]">
                 {latestIntentSentiment ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 h-full">
                     {/* Intent Card */}
-                    <div className="rounded-2xl bg-white border border-slate-200 shadow-sm p-6 flex flex-col justify-center">
-                      <div className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Classified Intent</div>
-                      <div className="text-xl md:text-2xl font-extrabold text-indigo-700 capitalize leading-tight">
+                    <div className="rounded-lg bg-white border border-[#E4E7EC] p-6 flex flex-col justify-center">
+                      <div className="text-xs font-semibold uppercase tracking-wider text-[#667085] mb-2">Classified Intent</div>
+                      <div className="text-xl md:text-2xl font-semibold text-[#2E5AAC] capitalize leading-tight">
                         {latestIntentSentiment?.intent?.replace(/_/g, ' ') || 'General Question'}
                       </div>
-                      <p className="text-[11px] text-slate-400 mt-2">Core reason for contact</p>
+                      <p className="text-[11px] text-[#98A2B3] mt-2">Core reason for contact</p>
                     </div>
 
                     {/* Emotion Card */}
-                    <div className="rounded-2xl bg-white border border-slate-200 shadow-sm p-6 flex flex-col justify-center">
-                      <div className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">Detected Emotion</div>
+                    <div className="rounded-lg bg-white border border-[#E4E7EC] p-6 flex flex-col justify-center">
+                      <div className="text-xs font-semibold uppercase tracking-wider text-[#667085] mb-3">Detected Emotion</div>
                       <div className="flex items-center">
-                        <span className={`inline-flex items-center gap-2 rounded-xl border px-4 py-2 text-base font-bold capitalize shadow-sm ${
-                          EMOTION_COLORS[latestIntentSentiment?.emotion || 'neutral'] || 'bg-slate-50 border-slate-200 text-slate-700'
-                        }`}>
+                        <span className={`inline-flex items-center gap-2 rounded-lg border px-4 py-2 text-base font-semibold capitalize ${EMOTION_COLORS[latestIntentSentiment?.emotion || 'neutral'] || 'bg-[#F2F4F7] border-[#E4E7EC] text-[#667085]'}`}>
                           <span className="h-2 w-2 rounded-full bg-current" />
                           {latestIntentSentiment?.emotion || 'Neutral'}
                         </span>
                       </div>
-                      <p className="text-[11px] text-slate-400 mt-3">Primary emotional state</p>
+                      <p className="text-[11px] text-[#98A2B3] mt-3">Primary emotional state</p>
                     </div>
 
                     {/* Frustration Gauge */}
-                    <div className="rounded-2xl bg-white border border-slate-200 shadow-sm p-6 flex flex-col justify-center">
+                    <div className="rounded-lg bg-white border border-[#E4E7EC] p-6 flex flex-col justify-center">
                       <div className="flex items-center justify-between mb-3">
-                        <div className="text-xs font-bold uppercase tracking-wider text-slate-500">Frustration Level</div>
-                        <span className="text-xl font-extrabold text-slate-900">{latestIntentSentiment?.frustration_score || 0}<span className="text-sm text-slate-400 font-medium">/100</span></span>
+                        <div className="text-xs font-semibold uppercase tracking-wider text-[#667085]">Frustration Level</div>
+                        <span className="text-xl font-semibold text-[#101828]">{latestIntentSentiment?.frustration_score || 0}<span className="text-sm text-[#98A2B3] font-medium">/100</span></span>
                       </div>
                       <div className="mt-2 relative">
-                        <div className="h-3.5 rounded-full bg-slate-100 overflow-hidden shadow-inner">
+                        <div className="h-3.5 rounded-full bg-[#F2F4F7] overflow-hidden">
                           <div
-                            className={`h-full rounded-full transition-all duration-700 ease-out ${
-                              (latestIntentSentiment?.frustration_score || 0) > 75 ? 'bg-red-500' :
-                              (latestIntentSentiment?.frustration_score || 0) > 40 ? 'bg-amber-500' :
-                              'bg-emerald-500'
-                            }`}
+                            className={`h-full rounded-full transition-all duration-700 ease-out ${(latestIntentSentiment?.frustration_score || 0) > 75 ? 'bg-[#F04438]' : (latestIntentSentiment?.frustration_score || 0) > 40 ? 'bg-[#F79009]' : 'bg-[#12B76A]'}`}
                             style={{ width: `${latestIntentSentiment?.frustration_score || 0}%` }}
                           />
                         </div>
-                        <div className="flex justify-between text-[10px] font-medium text-slate-400 mt-2 px-1">
+                        <div className="flex justify-between text-[10px] font-medium text-[#98A2B3] mt-2 px-1">
                           <span>Calm</span>
                           <span>Elevated</span>
                           <span>Critical</span>
@@ -644,30 +593,30 @@ const messagesEndRef = useRef<HTMLDivElement>(null)
                     </div>
 
                     {/* Satisfaction Trend */}
-                    <div className="rounded-2xl bg-white border border-slate-200 shadow-sm p-6 flex flex-col justify-center">
-                      <div className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Satisfaction Trend</div>
+                    <div className="rounded-lg bg-white border border-[#E4E7EC] p-6 flex flex-col justify-center">
+                      <div className="text-xs font-semibold uppercase tracking-wider text-[#667085] mb-2">Satisfaction Trend</div>
                       <div className="flex items-center gap-3">
-                        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-50 border border-slate-100 text-2xl shadow-sm">
-                          {TREND_ICONS[latestIntentSentiment?.satisfaction_trend || 'stable'] || '➡️'}
+                        <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-[#F2F4F7] border border-[#E4E7EC] text-xl text-[#2E5AAC]">
+                          {TREND_ICONS[latestIntentSentiment?.satisfaction_trend || 'stable'] || '→'}
                         </div>
                         <div>
-                          <div className="text-xl font-extrabold text-slate-900 capitalize">
+                          <div className="text-xl font-semibold text-[#101828] capitalize">
                             {latestIntentSentiment?.satisfaction_trend || 'Stable'}
                           </div>
-                          <div className="text-[11px] text-slate-500 font-medium">Trajectory</div>
+                          <div className="text-[11px] text-[#667085] font-medium">Trajectory</div>
                         </div>
                       </div>
                     </div>
                   </div>
                 ) : (
                   <div className="flex flex-col items-center justify-center h-full text-center">
-                    <div className="h-16 w-16 bg-slate-100 rounded-full flex items-center justify-center mb-4">
-                      <svg className="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div className="h-16 w-16 bg-[#F2F4F7] rounded-full flex items-center justify-center mb-4">
+                      <svg className="w-8 h-8 text-[#B9C1CF]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                       </svg>
                     </div>
-                    <h3 className="text-sm font-bold text-slate-700">Awaiting Conversation Data</h3>
-                    <p className="text-xs text-slate-500 mt-1 max-w-xs">AI analytics will populate automatically as soon as the customer responds.</p>
+                    <h3 className="text-sm font-semibold text-[#101828]">Awaiting conversation data</h3>
+                    <p className="text-xs text-[#667085] mt-1 max-w-xs">AI analytics will populate automatically as soon as the customer responds.</p>
                   </div>
                 )}
               </div>
@@ -677,47 +626,47 @@ const messagesEndRef = useRef<HTMLDivElement>(null)
           {/* Bottom Row: Knowledge Base & Coaching Span Full Width */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-            {/* Knowledge Base Results (Takes up 2/3 of bottom area) */}
-            <div className="lg:col-span-2 bg-white border border-gray-200 rounded-2xl shadow-sm flex flex-col">
-              <div className="shrink-0 border-b border-gray-100 px-6 py-4 flex justify-between items-center bg-slate-50/50 rounded-t-2xl">
-                <h3 className="font-bold text-gray-900 text-sm flex items-center gap-2.5">
-                  <span className="w-2 h-2 rounded-full bg-blue-500" />
+            {/* Knowledge Base Results (2/3) */}
+            <div className="lg:col-span-2 bg-white border border-[#E4E7EC] rounded-[8px] flex flex-col">
+              <div className="shrink-0 border-b border-[#E4E7EC] px-6 py-4 flex justify-between items-center bg-white rounded-t-[8px]">
+                <h3 className="font-semibold text-[#101828] text-sm flex items-center gap-2.5">
+                  <span className="w-2 h-2 rounded-full bg-[#2E5AAC]" />
                   Agent Knowledge Base Retrieval
                 </h3>
-                <span className="text-[11px] font-semibold text-slate-500 bg-slate-200/50 px-2.5 py-1 rounded-md">
+                <span className="text-[11px] font-medium text-[#667085] bg-[#F2F4F7] px-2.5 py-1 rounded-md">
                   RAG Pipeline
                 </span>
               </div>
 
-              <div className="p-6 bg-slate-50/20 flex-1">
+              <div className="p-6 bg-[#FAFBFC] flex-1">
                 {latestKnowledgeResults ? (
                   latestKnowledgeResults?.results?.length > 0 ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {latestKnowledgeResults.results.map((result, idx) => (
-                        <div key={idx} className="rounded-2xl border border-blue-100 bg-white p-5 shadow-sm hover:shadow-md transition-shadow">
+                        <div key={idx} className="rounded-lg border border-[#E4E7EC] bg-white p-5">
                           <div className="flex items-center justify-between gap-2 mb-3">
-                            <span className="inline-flex items-center justify-center h-6 w-6 rounded-full bg-blue-50 text-[10px] font-extrabold text-blue-700 border border-blue-100">
+                            <span className="inline-flex items-center justify-center h-6 w-6 rounded-full bg-[#EEF2FA] text-[10px] font-semibold text-[#2E5AAC] border border-[#D6E0F2]">
                               {idx + 1}
                             </span>
-                            <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-lg shadow-sm">
+                            <span className="text-[10px] font-semibold text-[#12B76A] bg-[#E7F7EF] border border-[#B7E8CF] px-2.5 py-1 rounded-lg">
                               {((result?.relevance_score || 0) * 100).toFixed(0)}% MATCH
                             </span>
                           </div>
-                          <p className="text-[13px] text-gray-800 leading-relaxed font-medium mb-3 line-clamp-3">
+                          <p className="text-[13px] text-[#101828] leading-relaxed font-medium mb-3 line-clamp-3">
                             "{result?.chunk_text}"
                           </p>
-                          <div className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-500 bg-slate-50 py-1.5 px-2.5 rounded-lg border border-slate-100 mb-3 truncate">
-                            <svg className="w-3.5 h-3.5 text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <div className="flex items-center gap-1.5 text-[11px] font-medium text-[#667085] bg-[#F2F4F7] py-1.5 px-2.5 rounded-lg border border-[#E4E7EC] mb-3 truncate">
+                            <svg className="w-3.5 h-3.5 text-[#B9C1CF] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                             </svg>
                             <span className="truncate">{result?.source_document}</span>
                           </div>
                           {result?.why_relevant && (
-                            <div className="pt-3 border-t border-slate-100">
-                              <div className="text-[10px] font-bold uppercase tracking-wider text-blue-600 mb-1">
+                            <div className="pt-3 border-t border-[#E4E7EC]">
+                              <div className="text-[10px] font-semibold uppercase tracking-wider text-[#2E5AAC] mb-1">
                                 AI Reasoning
                               </div>
-                              <p className="text-[11px] text-slate-600 leading-relaxed line-clamp-2">{result.why_relevant}</p>
+                              <p className="text-[11px] text-[#667085] leading-relaxed line-clamp-2">{result.why_relevant}</p>
                             </div>
                           )}
                         </div>
@@ -725,51 +674,59 @@ const messagesEndRef = useRef<HTMLDivElement>(null)
                     </div>
                   ) : (
                     <div className="flex flex-col items-center justify-center py-10 text-center">
-                      <div className="text-3xl mb-3 opacity-50">📂</div>
-                      <p className="text-sm font-bold text-slate-700">No Knowledge Found</p>
-                      <p className="text-xs text-slate-500 mt-1 max-w-sm">The semantic search returned no highly relevant documents for the last interaction.</p>
+                      <div className="mx-auto h-12 w-12 rounded-full bg-[#F2F4F7] flex items-center justify-center mb-3">
+                        <svg className="h-6 w-6 text-[#B9C1CF]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                        </svg>
+                      </div>
+                      <p className="text-sm font-semibold text-[#101828]">No knowledge found</p>
+                      <p className="text-xs text-[#667085] mt-1 max-w-sm">The semantic search returned no highly relevant documents for the last interaction.</p>
                     </div>
                   )
                 ) : (
                   <div className="flex flex-col items-center justify-center py-10 text-center">
-                    <div className="text-3xl mb-3 opacity-30">🔍</div>
-                    <p className="text-sm font-bold text-slate-700">Awaiting Search Query</p>
-                    <p className="text-xs text-slate-500 mt-1">Knowledge base results will automatically trigger when the customer asks a question.</p>
+                    <div className="mx-auto h-12 w-12 rounded-full bg-[#F2F4F7] flex items-center justify-center mb-3">
+                      <svg className="h-6 w-6 text-[#B9C1CF]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M17 10a7 7 0 11-14 0 7 7 0 0114 0z" />
+                      </svg>
+                    </div>
+                    <p className="text-sm font-semibold text-[#101828]">Awaiting search query</p>
+                    <p className="text-xs text-[#667085] mt-1">Knowledge base results will automatically trigger when the customer asks a question.</p>
                   </div>
                 )}
               </div>
             </div>
 
-            {/* Live Coaching (Takes up 1/3 of bottom area) — now from live context */}
-            <div className="lg:col-span-1 bg-white border border-gray-200 rounded-2xl shadow-sm flex flex-col">
-              <div className="shrink-0 border-b border-gray-100 px-6 py-4 flex justify-between items-center bg-slate-50/50 rounded-t-2xl">
-                <h3 className="font-bold text-gray-900 text-sm flex items-center gap-2.5">
-                  <span className="w-2 h-2 rounded-full bg-amber-500" />
+            {/* Live Coaching (1/3) */}
+            <div className="lg:col-span-1 bg-white border border-[#E4E7EC] rounded-[8px] flex flex-col">
+              <div className="shrink-0 border-b border-[#E4E7EC] px-6 py-4 flex justify-between items-center bg-white rounded-t-[8px]">
+                <h3 className="font-semibold text-[#101828] text-sm flex items-center gap-2.5">
+                  <span className="w-2 h-2 rounded-full bg-[#2E5AAC]" />
                   Live Coaching
                 </h3>
               </div>
-              <div className="p-6 flex flex-col justify-center items-center h-full text-center">
+              <div className="p-6 flex flex-col justify-center items-center h-full text-center bg-[#FAFBFC]">
                 {latestCoachingSuggestion ? (
                   <>
                     {latestCoachingSuggestion.coaching_tips?.length > 0 && (
                       <div className="w-full text-left mb-4 space-y-2">
                         {latestCoachingSuggestion.coaching_tips.map((tip, i) => (
-                          <div key={i} className="rounded-lg bg-amber-50 border border-amber-200 px-3 py-2 text-left">
-                            <div className="text-[10px] font-bold uppercase tracking-wider text-amber-700 mb-0.5">Tip {i + 1}</div>
-                            <p className="text-[12px] text-slate-800 leading-relaxed">{tip}</p>
+                          <div key={i} className="rounded-lg bg-[#EEF2FA] border border-[#D6E0F2] px-3 py-2 text-left">
+                            <div className="text-[10px] font-semibold uppercase tracking-wider text-[#2E5AAC] mb-0.5">Tip {i + 1}</div>
+                            <p className="text-[12px] text-[#101828] leading-relaxed">{tip}</p>
                           </div>
                         ))}
                       </div>
                     )}
                     {latestCoachingSuggestion.suggested_response && (
-                      <div className="w-full rounded-xl bg-slate-50 border border-slate-200 p-4 text-left">
-                        <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">Suggested Response</div>
-                        <p className="text-[13px] text-slate-800 leading-relaxed">{latestCoachingSuggestion.suggested_response}</p>
+                      <div className="w-full rounded-lg bg-white border border-[#E4E7EC] p-4 text-left">
+                        <div className="text-[10px] font-semibold uppercase tracking-wider text-[#667085] mb-1">Suggested Response</div>
+                        <p className="text-[13px] text-[#101828] leading-relaxed">{latestCoachingSuggestion.suggested_response}</p>
                         <button
                           type="button"
                           onClick={() => setAgentInput(latestCoachingSuggestion.suggested_response ?? '')}
                           disabled={turnStatus === 'pending' || isTyping}
-                          className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-1 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                          className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-[#2E5AAC] px-3 py-1.5 text-xs font-medium text-white hover:bg-[#274D8F] focus:outline-none focus:ring-2 focus:ring-[#2E5AAC]/30 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                         >
                           <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
@@ -781,13 +738,13 @@ const messagesEndRef = useRef<HTMLDivElement>(null)
                   </>
                 ) : (
                   <>
-                    <div className="w-16 h-16 rounded-full bg-amber-50 flex items-center justify-center mb-4 border border-amber-100">
-                      <svg className="w-8 h-8 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div className="w-16 h-16 rounded-full bg-[#F2F4F7] flex items-center justify-center mb-4 border border-[#E4E7EC]">
+                      <svg className="w-8 h-8 text-[#B9C1CF]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
                       </svg>
                     </div>
-                    <h4 className="text-sm font-bold text-slate-800 mb-2">Awaiting Coaching</h4>
-                    <p className="text-[13px] text-slate-500 leading-relaxed mb-6">
+                    <h4 className="text-sm font-semibold text-[#101828] mb-2">Awaiting coaching</h4>
+                    <p className="text-[13px] text-[#667085] leading-relaxed mb-6">
                       Coaching suggestions will appear here after the first turn is analyzed.
                     </p>
                   </>

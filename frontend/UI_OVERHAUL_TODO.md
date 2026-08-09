@@ -23,15 +23,15 @@ Analytics page = RESTYLE-ONLY (zero structural changes).
 - [x] `npm run build` passes
 - [x] Commit
 
-## Task 4 — Live Console (highest detail)
-- [ ] 4-panel grid token restyle, normalized borders/spacing
-- [ ] Escalation signature risk-indicator treatment
-- [ ] Chat bubbles restyled (customer/agent distinction kept)
-- [ ] Remove outdated LOCKED/Coming Soon copy (M3 live)
-- [ ] turnStatus pending/error calm treatment
-- [ ] Responsive: 4-panel grid stacks on narrow viewport
-- [ ] `npm run build` passes
-- [ ] Commit
+## Task 4 — Live Console (highest detail) (DONE)
+- [x] 4-panel grid token restyle, normalized borders/spacing (rounded-[8px], #E4E7EC)
+- [x] Escalation signature risk-indicator treatment (risk colors tokenized on frustration/level)
+- [x] Chat bubbles restyled (customer/agent distinction kept)
+- [x] Remove outdated LOCKED/Coming Soon copy (M3 live)
+- [x] turnStatus pending/error calm treatment
+- [x] Responsive: 4-panel grid stacks on narrow viewport (lg:h-[600px] min-h-[480px])
+- [x] `npm run build` passes
+- [x] Commit
 
 ## Task 5 — Session Config, KB Upload, Coaching Feed, Escalation Alerts
 - [ ] Apply token system to all four
