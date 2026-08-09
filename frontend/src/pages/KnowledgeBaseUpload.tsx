@@ -106,20 +106,27 @@ export default function KnowledgeBaseUpload() {
   }
 
 return (
-    <section className="rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
+    <section className="rounded-2xl border border-[#d4e3ee] bg-gradient-to-b from-white via-[#f4f9fc] to-[#eef7f3] p-8 shadow-[1px_1px_24px_-10px_rgba(14,116,144,0.25)]">
       {/* Header Section */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-6">
-        <div>
+      <div className="rounded-xl border border-[#16283c] bg-gradient-to-r from-[#0A1A2E] via-[#0E2740] to-[#0B2A37] px-6 py-5 shadow-[0_8px_24px_-8px_rgba(0,0,0,0.5)]">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-display font-semibold text-[#101828] tracking-tight">Knowledge Base Upload</h1>
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-[#C7D2E8] bg-[#E9EDF6] px-3 py-1 text-xs font-medium text-[#0E2B6C]">
-              <span className="h-1.5 w-1.5 rounded-full bg-[#0E2B6C]" />
-              RAG Ingestion
-            </span>
+            <div className="brand-grad h-10 w-10 shrink-0 rounded-xl text-white flex items-center justify-center text-base font-bold shadow-[0_4px_14px_rgba(14,116,144,0.5)]">
+              C
+            </div>
+            <div>
+              <div className="flex items-center gap-3">
+                <h1 className="text-2xl font-display font-semibold text-white tracking-tight">Knowledge Base Upload</h1>
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-[#C7D2E8] bg-[#E9EDF6] px-3 py-1 text-xs font-medium text-[#0E2B6C]">
+                  <span className="h-1.5 w-1.5 rounded-full bg-[#0E2B6C]" />
+                  RAG Ingestion
+                </span>
+              </div>
+              <p className="text-[#9DB7CF] text-sm mt-1">
+                Ingest training documents into your vector database to enhance retrieval-augmented generation.
+              </p>
+            </div>
           </div>
-          <p className="text-[#667085] text-sm mt-1.5">
-            Ingest training documents into your vector database to enhance retrieval-augmented generation.
-          </p>
         </div>
       </div>
 

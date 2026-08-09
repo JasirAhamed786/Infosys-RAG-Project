@@ -149,8 +149,8 @@ export default function Home() {
                 {[
                   { label: 'Intent', sub: 'Classification', grad: 'panel-blue', delay: 0 },
                   { label: 'Sentiment', sub: 'Trend analysis', grad: 'panel-teal', delay: 0.8 },
-                  { label: 'Knowledge', sub: 'RAG retrieval', grad: 'panel-green', delay: 1.6 },
-                  { label: 'Coaching', sub: 'Live suggestions', grad: 'panel-violet', delay: 2.4 },
+{ label: 'Knowledge', sub: 'RAG retrieval', grad: 'panel-green', delay: 1.6 },
+                  { label: 'Coaching', sub: 'Live suggestions', grad: 'panel-teal', delay: 2.4 },
                 ].map((n, i) => (
                   <motion.div
                     key={n.label}

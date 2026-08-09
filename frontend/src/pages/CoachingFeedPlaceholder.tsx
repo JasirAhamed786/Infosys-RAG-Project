@@ -12,27 +12,34 @@ export default function CoachingFeedPlaceholder() {
   const isLoading = turnStatus === 'pending'
 
 return (
-    <section className="gradient-surface p-8 max-w-7xl mx-auto w-full">
-      {/* ── Header ── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#d7e3f4] pb-6">
-        <div>
+<section className="gradient-surface p-8 max-w-7xl mx-auto w-full">
+      {/* ── Dark hero header band ── */}
+      <div className="rounded-xl border border-[#16283c] bg-gradient-to-r from-[#0A1A2E] via-[#0E2740] to-[#0B2A37] px-6 py-5 shadow-[0_8px_24px_-8px_rgba(0,0,0,0.5)]">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-display font-semibold text-[#101828] tracking-tight">Coaching Feed</h1>
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-[#C7D2E8] bg-[#E9EDF6] px-3 py-1 text-xs font-medium text-[#0E2B6C]">
-              <span className="h-1.5 w-1.5 rounded-full bg-[#0E2B6C]" />
-              Live
-            </span>
+            <div className="brand-grad h-10 w-10 shrink-0 rounded-xl text-white flex items-center justify-center text-base font-bold shadow-[0_4px_14px_rgba(14,116,144,0.5)]">
+              C
+            </div>
+            <div>
+              <div className="flex items-center gap-3">
+                <h1 className="text-2xl font-display font-semibold text-white tracking-tight">Coaching Feed</h1>
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-[#C7D2E8] bg-[#E9EDF6] px-3 py-1 text-xs font-medium text-[#0E2B6C]">
+                  <span className="h-1.5 w-1.5 rounded-full bg-[#0E2B6C]" />
+                  Live
+                </span>
+              </div>
+              <p className="text-[#9DB7CF] text-sm mt-1">
+                Agent coaching tips, response drafts, and next-best actions delivered in real time.
+              </p>
+            </div>
           </div>
-          <p className="text-[#667085] text-sm mt-1.5">
-            Agent coaching tips, response drafts, and next-best actions delivered in real time.
-          </p>
+          {isSessionActive && (
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-[#B7E8CF] bg-[#E7F7EF] px-3 py-1 text-xs font-medium text-[#12B76A] self-start sm:self-auto">
+              <span className="h-1.5 w-1.5 rounded-full bg-[#12B76A]" />
+              Live Session
+            </span>
+          )}
         </div>
-        {isSessionActive && (
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-[#B7E8CF] bg-[#E7F7EF] px-3 py-1 text-xs font-medium text-[#12B76A] self-start sm:self-auto">
-            <span className="h-1.5 w-1.5 rounded-full bg-[#12B76A]" />
-            Live Session
-          </span>
-        )}
       </div>
 
       <div className="mt-8">

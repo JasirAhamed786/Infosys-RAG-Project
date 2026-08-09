@@ -193,8 +193,8 @@ const messagesEndRef = useRef<HTMLDivElement>(null)
   return (
     <div className="flex flex-col min-h-0 h-full max-w-[1600px] mx-auto w-full pb-12">
 
-{/* ── Header Banner ── */}
-      <div className="shrink-0 rounded-2xl border border-slate-200 bg-white p-5 md:p-6 mb-6 shadow-sm relative overflow-hidden">
+{/* ── Dark hero header band ── */}
+      <div className="shrink-0 rounded-2xl border border-[#16283c] bg-gradient-to-r from-[#0A1A2E] via-[#0E2740] to-[#0B2A37] p-5 md:p-6 mb-6 shadow-[0_8px_24px_-8px_rgba(0,0,0,0.5)] relative overflow-hidden">
         <div className="absolute inset-x-0 top-0 h-1.5 brand-grad" aria-hidden="true" />
         <div className="flex items-center justify-between gap-4 flex-wrap">
           <div>
@@ -202,10 +202,10 @@ const messagesEndRef = useRef<HTMLDivElement>(null)
               <span className={`h-1.5 w-1.5 rounded-full ${isSessionActive ? 'bg-[#12B76A]' : 'bg-[#C7CED9]'}`} />
               {isSessionActive ? 'Live Session Active' : 'Configure New Session'}
             </div>
-            <h1 className="mt-2.5 text-2xl md:text-3xl font-display font-semibold tracking-tight text-[#101828]">
+            <h1 className="mt-2.5 text-2xl md:text-3xl font-display font-semibold tracking-tight text-white">
               Live Support Console
             </h1>
-            <p className="mt-1 text-sm text-[#667085] max-w-3xl">
+            <p className="mt-1 text-sm text-[#9DB7CF] max-w-3xl">
               {isSessionActive
                 ? `Simulator Mode • Session ID: ${(sessionId ?? '').slice(0, 8)}... • Thread ID: ${(threadId ?? '').slice(0, 8)}...`
                 : 'Configure a session to start simulating real customer support interactions and testing the AI RAG pipeline.'}
@@ -214,7 +214,7 @@ const messagesEndRef = useRef<HTMLDivElement>(null)
           {isSessionActive && (
             <button
               onClick={endSession}
-              className="shrink-0 rounded-lg border border-[#F6B5B0] bg-white text-[#F04438] px-5 py-2.5 text-sm font-medium hover:bg-[#FDEBEA] transition-colors"
+              className="shrink-0 rounded-lg border border-[#F6B5B0] bg-white/10 text-[#FFB4AD] px-5 py-2.5 text-sm font-medium hover:bg-[#FDEBEA] hover:text-[#F04438] transition-colors"
             >
               <span className="flex items-center gap-2">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -292,7 +292,7 @@ const messagesEndRef = useRef<HTMLDivElement>(null)
                     type="text"
                     value={productContext}
                     onChange={(e) => setProductContext(e.target.value)}
-                    className="w-full rounded-lg border border-[#D0D5DD] px-4 py-3 text-sm text-[#101828] placeholder-[#98A2B3] bg-white focus:border-[#0E2B6C] focus:outline-none focus:ring-2 focus:ring-[#0E2B6C]/20 disabled:bg-[#F2F4F7]"
+                    className="gradient-placeholder w-full rounded-lg border border-[#C7D2E8] px-4 py-3 text-sm text-[#101828] bg-white focus:border-[#0E2B6C] focus:outline-none focus:ring-2 focus:ring-[#0E2B6C]/20 disabled:bg-[#F2F4F7]"
                     placeholder="e.g., Enterprise SaaS Billing Support"
                     required
                     disabled={loading}
@@ -462,7 +462,7 @@ className="w-full inline-flex items-center justify-center rounded-lg brand-grad 
               </div>
 
               {/* Scrollable Messages Area */}
-              <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4 bg-[#FAFBFC]">
+              <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4 bg-gradient-to-b from-[#f3f8ff] via-[#f4fafa] to-[#eef7f3]">
                 {messages.length === 0 && !isTyping && (
                   <div className="flex items-center justify-center h-full">
                     <div className="text-center">
@@ -482,9 +482,9 @@ className="w-full inline-flex items-center justify-center rounded-lg brand-grad 
                   const displayText = isLastCustomer && typingText ? typingText : msg.content
                   return (
                     <div key={idx} className={`flex ${msg.role === 'customer' ? 'justify-start' : msg.role === 'agent' ? 'justify-end' : 'justify-center'}`}>
-                      <div className={`max-w-[85%] rounded-lg px-4 py-3 ${msg.role === 'customer' ? 'bg-white border border-[#E4E7EC] text-[#101828]' : msg.role === 'agent' ? 'bg-[#0E2B6C] text-white' : 'bg-[#FEF3E2] border border-[#FAD9A8] text-[#7A4E00]'}`}>
+                      <div className={`max-w-[85%] rounded-lg px-4 py-3 shadow-sm ${msg.role === 'customer' ? 'bg-white/95 border border-[#C7D2E8] text-[#101828] panel-blue hover-lift' : msg.role === 'agent' ? 'bg-gradient-to-br from-[#0E2B6C] to-[#059669] text-white' : 'bg-[#FEF3E2] border border-[#FAD9A8] text-[#7A4E00]'}`}>
                         <div className="flex items-center justify-between gap-3 mb-1.5">
-                          <span className={`text-[10px] font-semibold uppercase tracking-wider ${msg.role === 'customer' ? 'text-[#667085]' : msg.role === 'agent' ? 'text-[#E5EBF7]' : 'text-[#B26A00]'}`}>
+                          <span className={`text-[10px] font-semibold uppercase tracking-wider ${msg.role === 'customer' ? 'text-[#0E2B6C]' : msg.role === 'agent' ? 'text-[#DCF5E9]' : 'text-[#B26A00]'}`}>
                             {msg.role === 'customer' ? 'Customer' : msg.role === 'agent' ? 'You' : 'System'}
                           </span>
                           {msg.frustrationLevel !== undefined && msg.frustrationLevel !== null && (
@@ -542,7 +542,7 @@ className="w-full inline-flex items-center justify-center rounded-lg brand-grad 
             <div className="rounded-2xl border border-slate-200 bg-white shadow-sm flex flex-col lg:h-[600px] min-h-[480px] overflow-hidden fade-in-up">
               <div className="shrink-0 border-b border-slate-200 px-6 py-5 bg-slate-50/50">
                 <h3 className="font-semibold text-[#101828] text-base flex items-center gap-2.5">
-                  <span className="w-2 h-2 rounded-full bg-[#6D28D9]" />
+                  <span className="w-2 h-2 rounded-full bg-[#0E7490]" />
                   Real-Time AI Intent & Sentiment
                 </h3>
                 <p className="text-xs text-[#667085] mt-1">Live metrics evaluating the customer's current emotional state.</p>
@@ -561,8 +561,8 @@ className="w-full inline-flex items-center justify-center rounded-lg brand-grad 
                     </div>
 
                     {/* Emotion Card */}
-                    <div className="rounded-lg panel-violet hover-lift p-6 flex flex-col justify-center">
-                      <div className="text-xs font-semibold uppercase tracking-wider text-[#6D28D9] mb-3">Detected Emotion</div>
+                    <div className="rounded-lg panel-teal hover-lift p-6 flex flex-col justify-center">
+                      <div className="text-xs font-semibold uppercase tracking-wider text-[#0E7490] mb-3">Detected Emotion</div>
                       <div className="flex items-center">
                         <span className={`inline-flex items-center gap-2 rounded-lg border px-4 py-2 text-base font-semibold capitalize ${EMOTION_COLORS[latestIntentSentiment?.emotion || 'neutral'] || 'bg-[#F2F4F7] border-[#E4E7EC] text-[#667085]'}`}>
                           <span className="h-2 w-2 rounded-full bg-current" />
