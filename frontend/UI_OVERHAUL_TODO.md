@@ -8,13 +8,13 @@ Analytics page = RESTYLE-ONLY (zero structural changes).
 - [x] Report styled per audit (see chat transcript)
 - [x] Confirmed no backend files read
 
-## Task 2 — Global design system
-- [ ] tailwind.config.js: add palette + spacing + font tokens
-- [ ] styles.css: flatten .app-bg / .glass to flat token surfaces
-- [ ] index.html: add Inter + JetBrains Mono fonts
-- [ ] App.tsx: restyle shared hero/header wrapper (layout only, no routing logic)
-- [ ] `npm run build` passes
-- [ ] Commit
+## Task 2 — Global design system (DONE)
+- [x] tailwind.config.js: add palette + spacing + font tokens
+- [x] styles.css: flatten .app-bg / .glass to flat token surfaces
+- [x] index.html: add Inter + JetBrains Mono fonts
+- [x] App.tsx: restyle shared hero/header wrapper (layout only, no routing logic)
+- [x] `npm run build` passes
+- [x] Commit
 
 ## Task 3 — Navigation (TopNav.tsx)
 - [ ] Single accent active state (subtle underline/tint), inactive lower-contrast
