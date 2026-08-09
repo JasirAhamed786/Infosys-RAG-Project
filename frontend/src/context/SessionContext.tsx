@@ -29,6 +29,13 @@ export interface ChatMessage {
   role: 'customer' | 'agent' | 'system'
   content: string
   turnIndex: number
+  // Set true for the agent's own message rendered optimistically (before the
+  // backend pipeline resolves). The confirmed message replaces it on success.
+  optimistic?: boolean
+// Temporary client-side id so TURN_ERROR can flag the optimistic message.
+  tempId?: string
+  // Set true when the optimistic send ultimately failed (TURN_ERROR).
+  sendFailed?: boolean
   intentSentiment?: {
     intent: string
     emotion: string
@@ -141,12 +148,21 @@ type SessionAction =
       scenario: string
       persona: string | null
       messages: ChatMessage[]
+}
+  | {
+      type: 'AGENT_MESSAGE_SENT'
+      payload: {
+        content: string
+        tempId: string
+        turnIndex: number
+      }
     }
   | { type: 'TURN_PENDING' }
   | {
       type: 'TURN_SUCCESS'
       payload: {
         agentMessage: string
+        agentMessageTempId?: string
         customerMessage: string
         customerTurnIndex: number
         intentSentiment: IntentSentimentResult | null
@@ -156,7 +172,7 @@ type SessionAction =
         frustrationLevel: number | null
       }
     }
-  | { type: 'TURN_ERROR'; message: string }
+  | { type: 'TURN_ERROR'; message: string; failedTempId?: string }
   | { type: 'SESSION_ENDED' }
 
 function reducer(state: SessionState, action: SessionAction): SessionState {
@@ -175,12 +191,31 @@ function reducer(state: SessionState, action: SessionAction): SessionState {
         turnStatus: 'idle',
       }
 
+case 'AGENT_MESSAGE_SENT':
+      // Optimistic render: the agent sees their own message the instant they
+      // hit send, before the backend pipeline resolves. Marked optimistic so
+      // TURN_SUCCESS can reconcile (replace) it instead of duplicating.
+      return {
+        ...state,
+        messages: [
+          ...state.messages,
+          {
+            role: 'agent',
+            content: action.payload.content,
+            turnIndex: action.payload.turnIndex,
+            optimistic: true,
+            tempId: action.payload.tempId,
+          },
+        ],
+      }
+
     case 'TURN_PENDING':
       return { ...state, turnStatus: 'pending' }
 
     case 'TURN_SUCCESS': {
       const {
         agentMessage,
+        agentMessageTempId,
         customerMessage,
         customerTurnIndex,
         intentSentiment,
@@ -190,11 +225,6 @@ function reducer(state: SessionState, action: SessionAction): SessionState {
         frustrationLevel,
       } = action.payload
 
-      const agentMsg: ChatMessage = {
-        role: 'agent',
-        content: agentMessage,
-        turnIndex: customerTurnIndex - 1,
-      }
       const customerMsg: ChatMessage = {
         role: 'customer',
         content: customerMessage,
@@ -203,6 +233,46 @@ function reducer(state: SessionState, action: SessionAction): SessionState {
         knowledge,
         frustrationLevel,
       }
+
+      // Reconcile the optimistic agent message: if a matching optimistic
+      // message exists (matched by tempId), replace it with the confirmed one
+      // (same content, optimistic flag cleared). Otherwise append the agent
+      // message normally (e.g. when no optimistic message exists).
+      let nextMessages: ChatMessage[]
+      if (agentMessageTempId) {
+        let replaced = false
+        nextMessages = state.messages.map((m) => {
+          if (!replaced && m.optimistic && m.tempId === agentMessageTempId) {
+            replaced = true
+            return {
+              role: 'agent',
+              content: agentMessage,
+              turnIndex: customerTurnIndex - 1,
+            }
+          }
+          return m
+        })
+        if (!replaced) {
+          nextMessages = [
+            ...nextMessages,
+            {
+              role: 'agent',
+              content: agentMessage,
+              turnIndex: customerTurnIndex - 1,
+            },
+          ]
+        }
+      } else {
+        nextMessages = [
+          ...state.messages,
+          {
+            role: 'agent',
+            content: agentMessage,
+            turnIndex: customerTurnIndex - 1,
+          },
+        ]
+      }
+      nextMessages = [...nextMessages, customerMsg]
 
       const historyEntry: EscalationHistoryEntry = escalation
         ? {
@@ -224,7 +294,7 @@ function reducer(state: SessionState, action: SessionAction): SessionState {
 
       return {
         ...state,
-        messages: [...state.messages, agentMsg, customerMsg],
+        messages: nextMessages,
         latestIntentSentiment: intentSentiment,
         latestKnowledgeResults: knowledge,
         latestCoachingSuggestion: coaching,
@@ -235,8 +305,20 @@ function reducer(state: SessionState, action: SessionAction): SessionState {
       }
     }
 
-    case 'TURN_ERROR':
-      return { ...state, turnStatus: 'error' }
+    case 'TURN_ERROR': {
+      // Flag the optimistic agent message as failed so the user sees a clear
+      // "failed to send" indicator instead of a message that silently never
+      // reached the backend.
+      const failedTempId = action.failedTempId
+      const messages = failedTempId
+        ? state.messages.map((m) =>
+            m.optimistic && m.tempId === failedTempId
+              ? { ...m, optimistic: false, sendFailed: true }
+              : m
+          )
+        : state.messages
+      return { ...state, messages, turnStatus: 'error' }
+    }
 
     case 'SESSION_ENDED':
       return { ...INITIAL_STATE }
@@ -320,12 +402,27 @@ export function SessionProvider({ children }: { children: ReactNode }) {
           return
         }
 
-        const trimmed = message.trim()
+const trimmed = message.trim()
         if (!trimmed) {
           console.warn('[SessionContext] submitTurn ignored — empty message')
           return
         }
 
+        // Optimistic UI (Bug 3): render the agent's own message the instant they
+        // hit send, before the backend pipeline resolves. The tempId lets the
+        // reducer reconcile/flag this message when the turn settles.
+        const tempId = `agent-${Date.now()}`
+        dispatch({
+          type: 'AGENT_MESSAGE_SENT',
+          payload: {
+            content: trimmed,
+            tempId,
+            turnIndex: state.turnCount,
+          },
+        })
+
+        // TURN_PENDING now drives the "AI is analyzing" indicator — it does NOT
+        // block the agent's own message from appearing (that's optimistic above).
         dispatch({ type: 'TURN_PENDING' })
 
         // Safety timeout: if the backend /conversation/turn request hangs (e.g. a
@@ -407,8 +504,9 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 
           dispatch({
             type: 'TURN_SUCCESS',
-            payload: {
+payload: {
               agentMessage: trimmed,
+              agentMessageTempId: tempId,
               customerMessage,
               customerTurnIndex,
               intentSentiment: res.intent_sentiment ?? null,
@@ -419,8 +517,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
             },
           })
         } catch (err) {
-          const msg = err instanceof Error ? err.message : 'Conversation turn failed'
-          dispatch({ type: 'TURN_ERROR', message: msg })
+const msg = err instanceof Error ? err.message : 'Conversation turn failed'
+          dispatch({ type: 'TURN_ERROR', message: msg, failedTempId: tempId })
           // Re-throw so the page can optionally surface it; context also holds turnStatus "error".
           throw new Error(msg)
         }

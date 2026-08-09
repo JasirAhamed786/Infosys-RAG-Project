@@ -513,9 +513,15 @@ className="w-full inline-flex items-center justify-center rounded-lg brand-grad 
                     <div key={idx} className={`flex ${msg.role === 'customer' ? 'justify-start' : msg.role === 'agent' ? 'justify-end' : 'justify-center'}`}>
                       <div className={`max-w-[85%] rounded-lg px-4 py-3 shadow-sm ${msg.role === 'customer' ? 'bg-white/95 border border-[#C7D2E8] text-[#101828] panel-blue hover-lift' : msg.role === 'agent' ? 'bg-gradient-to-br from-[#0E2B6C] to-[#059669] text-white' : 'bg-[#FEF3E2] border border-[#FAD9A8] text-[#7A4E00]'}`}>
                         <div className="flex items-center justify-between gap-3 mb-1.5">
-                          <span className={`text-[10px] font-semibold uppercase tracking-wider ${msg.role === 'customer' ? 'text-[#0E2B6C]' : msg.role === 'agent' ? 'text-[#DCF5E9]' : 'text-[#B26A00]'}`}>
+<span className={`text-[10px] font-semibold uppercase tracking-wider ${msg.role === 'customer' ? 'text-[#0E2B6C]' : msg.role === 'agent' ? 'text-[#DCF5E9]' : 'text-[#B26A00]'}`}>
                             {msg.role === 'customer' ? 'Customer' : msg.role === 'agent' ? 'You' : 'System'}
                           </span>
+                          {msg.optimistic && (
+                            <span className="text-[10px] font-medium text-[#DCF5E9] bg-white/20 px-1.5 py-0.5 rounded">Sending…</span>
+                          )}
+                          {msg.sendFailed && (
+                            <span className="text-[10px] font-semibold text-white bg-[#F04438] px-1.5 py-0.5 rounded">Failed to send</span>
+                          )}
                           {msg.frustrationLevel !== undefined && msg.frustrationLevel !== null && (
                             <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full border ${msg.frustrationLevel > 60 ? 'bg-[#FDEBEA] border-[#F6B5B0] text-[#F04438]' : msg.frustrationLevel > 35 ? 'bg-[#FEF3E2] border-[#FAD9A8] text-[#F79009]' : 'bg-[#E7F7EF] border-[#B7E8CF] text-[#12B76A]'}`}>
                               Level: {msg.frustrationLevel}
