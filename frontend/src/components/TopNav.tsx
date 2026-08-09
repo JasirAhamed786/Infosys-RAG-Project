@@ -1,139 +1,103 @@
 import React from 'react'
 import { NavLink } from 'react-router-dom'
+import { useSession } from '../context/SessionContext'
+
+const TABS: { to: string; label: string }[] = [
+  { to: '/', label: 'Home' },
+  { to: '/session', label: 'Session Config' },
+  { to: '/knowledge', label: 'Knowledge Base' },
+  { to: '/console', label: 'Live Console' },
+  { to: '/coaching', label: 'Coaching Feed' },
+  { to: '/escalation', label: 'Escalation Alerts' },
+  { to: '/reports', label: 'Reports' },
+  { to: '/analytics', label: 'Analytics' },
+]
 
 export default function TopNav() {
+  const { isSessionActive } = useSession()
+
   return (
-    <header className="sticky top-0 z-50 border-b border-slate-200/60 bg-white/70 backdrop-blur-md">
-      {/* Keeping our widescreen max-w-7xl enterprise layout! */}
-      <div className="mx-auto max-w-7xl px-4 md:px-8 py-3.5 flex items-center justify-between gap-4">
+    <header className="sticky top-0 z-50 border-b border-[#E4E7EC] bg-white">
+      <div className="mx-auto max-w-7xl px-4 md:px-8 py-3 flex items-center justify-between gap-4">
         {/* Brand Logo & Title */}
         <div className="flex items-center gap-3">
-          <div className="relative h-10 w-10 rounded-xl bg-blue-600 text-white flex items-center justify-center text-sm font-bold shadow-md shadow-blue-600/20 overflow-hidden">
-            <span className="absolute inset-0 bg-gradient-to-br from-white/35 to-transparent opacity-80" />
-            <span className="absolute -top-6 -left-6 h-16 w-16 rounded-full bg-white/20 blur" />
-            <span className="relative">C</span>
+          <div className="h-9 w-9 rounded-[8px] bg-[#2E5AAC] text-white flex items-center justify-center text-sm font-semibold">
+            C
           </div>
           <div className="leading-tight">
-            <div className="font-bold text-slate-900 text-base tracking-tight">
-              Clario 
-            </div>
-
-            {/* 👇 CHANGED: Added "Customer Support Agent" with a pulsing green status dot! */}
-            <div className="text-xs font-semibold text-slate-500 flex items-center gap-1.5 mt-0.5">
-              <span className="inline-block h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span>Customer Support Agent</span>
+            <div className="font-semibold text-[#101828] text-base tracking-tight">Clario</div>
+            <div className="text-xs font-medium text-[#667085] flex items-center gap-1.5 mt-0.5">
+              <span className="inline-block h-1.5 w-1.5 rounded-full bg-[#2E5AAC]" />
+              Customer Support Agent
             </div>
           </div>
         </div>
 
         {/* Navigation Tabs */}
-        <nav className="flex items-center gap-2 text-sm font-semibold justify-end overflow-x-auto scrollbar-none">
-          <NavLink
-            to="/"
-            className={({ isActive }: { isActive: boolean }) =>
-              `relative px-3 py-2 rounded-xl transition-all duration-150 select-none ${
-                isActive
-                  ? 'text-blue-800 font-bold bg-blue-50 border-blue-100/90'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70 border border-transparent'
-              }`
-            }
-          >
-            <span className="relative z-10">Home</span>
-          </NavLink>
-
-          <NavLink
-            to="/session"
-            className={({ isActive }: { isActive: boolean }) =>
-              `relative px-3 py-2 rounded-xl transition-all duration-150 select-none ${
-                isActive
-                  ? 'text-blue-800 font-bold bg-blue-50 border border-blue-100/90 shadow-sm'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70 border border-transparent'
-              }`
-            }
-          >
-            <span className="relative z-10">Session Config</span>
-          </NavLink>
-
-
-          <NavLink
-            to="/knowledge"
-            className={({ isActive }: { isActive: boolean }) =>
-              `relative px-3 py-2 rounded-xl transition-all duration-150 select-none ${
-                isActive
-                  ? 'text-indigo-800 font-bold bg-indigo-50 border border-indigo-100/90 shadow-sm'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70 border border-transparent'
-              }`
-            }
-          >
-            <span className="relative z-10">Knowledge Base</span>
-          </NavLink>
-
-          <NavLink
-            to="/console"
-            className={({ isActive }: { isActive: boolean }) =>
-              `relative px-3 py-2 rounded-xl transition-all duration-150 select-none ${
-                isActive
-                  ? 'text-emerald-800 font-bold bg-emerald-50 border border-emerald-100/90 shadow-sm'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70 border border-transparent'
-              }`
-            }
-          >
-            <span className="relative z-10">Live Console</span>
-          </NavLink>
-
-          <NavLink
-            to="/coaching"
-            className={({ isActive }: { isActive: boolean }) =>
-              `relative px-3 py-2 rounded-xl transition-all duration-150 select-none ${
-                isActive
-                  ? 'text-indigo-800 font-bold bg-indigo-50 border border-indigo-100/90 shadow-sm'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70 border border-transparent'
-              }`
-            }
-          >
-            <span className="relative z-10">Coaching Feed</span>
-          </NavLink>
-
-          <NavLink
-            to="/escalation"
-            className={({ isActive }: { isActive: boolean }) =>
-              `relative px-3 py-2 rounded-xl transition-all duration-150 select-none ${
-                isActive
-                  ? 'text-rose-800 font-bold bg-rose-50 border border-rose-100/90 shadow-sm'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70 border border-transparent'
-              }`
-            }
-          >
-            <span className="relative z-10">Escalation Alerts</span>
-          </NavLink>
-
-          <NavLink
-            to="/reports"
-            className={({ isActive }: { isActive: boolean }) =>
-              `relative px-3 py-2 rounded-xl transition-all duration-150 select-none ${
-                isActive
-                  ? 'text-blue-800 font-bold bg-blue-50 border border-blue-100/90 shadow-sm'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70 border border-transparent'
-              }`
-            }
-          >
-            <span className="relative z-10">Reports</span>
-          </NavLink>
-
-          <NavLink
-            to="/analytics"
-            className={({ isActive }: { isActive: boolean }) =>
-              `relative px-3 py-2 rounded-xl transition-all duration-150 select-none ${
-                isActive
-                  ? 'text-emerald-800 font-bold bg-emerald-50 border border-emerald-100/90 shadow-sm'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70 border border-transparent'
-              }`
-            }
-          >
-            <span className="relative z-10">Analytics</span>
-          </NavLink>
+        <nav className="hidden lg:flex items-center gap-1 text-sm font-medium justify-end overflow-x-auto scrollbar-none">
+          {TABS.map((tab) => (
+            <NavLink
+              key={tab.to}
+              to={tab.to}
+              end={tab.to === '/'}
+              className={({ isActive }: { isActive: boolean }) =>
+                `relative px-3 py-1.5 rounded-[6px] transition-colors duration-150 select-none whitespace-nowrap ${
+                  isActive
+                    ? 'text-[#2E5AAC] bg-[#EEF2FA]'
+                    : 'text-[#667085] hover:text-[#101828] hover:bg-[#F2F4F7]'
+                }`
+              }
+            >
+              {({ isActive }: { isActive: boolean }) => (
+                <>
+                  {tab.label}
+                  <span
+                    className={`absolute inset-x-2 -bottom-[1px] h-0.5 rounded-full bg-[#2E5AAC] transition-opacity duration-150 ${
+                      isActive ? 'opacity-100' : 'opacity-0'
+                    }`}
+                  />
+                </>
+              )}
+            </NavLink>
+          ))}
         </nav>
+
+        {/* Persistent Session Active indicator */}
+        <div
+          className={`hidden md:inline-flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
+            isSessionActive
+              ? 'border-[#B7E8CF] bg-[#E7F7EF] text-[#12B76A]'
+              : 'border-[#E4E7EC] bg-white text-[#667085]'
+          }`}
+        >
+          <span
+            className={`h-1.5 w-1.5 rounded-full ${
+              isSessionActive ? 'bg-[#12B76A]' : 'bg-[#C7CED9]'
+            }`}
+          />
+          {isSessionActive ? 'Session Active' : 'No Session'}
+        </div>
       </div>
+
+      {/* Mobile horizontal tab scroller */}
+      <nav className="lg:hidden flex items-center gap-1 px-4 pb-2 text-sm font-medium overflow-x-auto scrollbar-none">
+        {TABS.map((tab) => (
+          <NavLink
+            key={tab.to}
+            to={tab.to}
+            end={tab.to === '/'}
+            className={({ isActive }: { isActive: boolean }) =>
+              `relative px-3 py-1.5 rounded-[6px] whitespace-nowrap transition-colors duration-150 ${
+                isActive
+                  ? 'text-[#2E5AAC] bg-[#EEF2FA]'
+                  : 'text-[#667085] hover:text-[#101828] hover:bg-[#F2F4F7]'
+              }`
+            }
+          >
+            {tab.label}
+          </NavLink>
+        ))}
+      </nav>
     </header>
   )
 }

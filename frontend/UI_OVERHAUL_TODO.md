@@ -16,12 +16,12 @@ Analytics page = RESTYLE-ONLY (zero structural changes).
 - [x] `npm run build` passes
 - [x] Commit
 
-## Task 3 — Navigation (TopNav.tsx)
-- [ ] Single accent active state (subtle underline/tint), inactive lower-contrast
-- [ ] Keep tab order/labels identical
-- [ ] Optional persistent "Session Active" indicator
-- [ ] `npm run build` passes
-- [ ] Commit
+## Task 3 — Navigation (TopNav.tsx) (DONE)
+- [x] Single accent active state (subtle underline/tint), inactive lower-contrast
+- [x] Keep tab order/labels identical
+- [x] Optional persistent "Session Active" indicator
+- [x] `npm run build` passes
+- [x] Commit
 
 ## Task 4 — Live Console (highest detail)
 - [ ] 4-panel grid token restyle, normalized borders/spacing
