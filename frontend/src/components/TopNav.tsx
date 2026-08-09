@@ -21,13 +21,13 @@ export default function TopNav() {
       <div className="mx-auto max-w-7xl px-4 md:px-8 py-3 flex items-center justify-between gap-4">
         {/* Brand Logo & Title */}
         <div className="flex items-center gap-3">
-          <div className="h-9 w-9 rounded-[8px] bg-[#2E5AAC] text-white flex items-center justify-center text-sm font-semibold">
+          <div className="h-9 w-9 rounded-[8px] bg-[#0E2B6C] text-white flex items-center justify-center text-sm font-semibold">
             C
           </div>
           <div className="leading-tight">
             <div className="font-semibold text-[#101828] text-base tracking-tight">Clario</div>
             <div className="text-xs font-medium text-[#667085] flex items-center gap-1.5 mt-0.5">
-              <span className="inline-block h-1.5 w-1.5 rounded-full bg-[#2E5AAC]" />
+              <span className="inline-block h-1.5 w-1.5 rounded-full bg-[#0E2B6C]" />
               Customer Support Agent
             </div>
           </div>
@@ -43,7 +43,7 @@ export default function TopNav() {
               className={({ isActive }: { isActive: boolean }) =>
                 `relative px-3 py-1.5 rounded-[6px] transition-colors duration-150 select-none whitespace-nowrap ${
                   isActive
-                    ? 'text-[#2E5AAC] bg-[#EEF2FA]'
+                    ? 'text-[#0E2B6C] bg-[#E9EDF6]'
                     : 'text-[#667085] hover:text-[#101828] hover:bg-[#F2F4F7]'
                 }`
               }
@@ -52,7 +52,7 @@ export default function TopNav() {
                 <>
                   {tab.label}
                   <span
-                    className={`absolute inset-x-2 -bottom-[1px] h-0.5 rounded-full bg-[#2E5AAC] transition-opacity duration-150 ${
+                    className={`absolute inset-x-2 -bottom-[1px] h-0.5 rounded-full bg-[#0E2B6C] transition-opacity duration-150 ${
                       isActive ? 'opacity-100' : 'opacity-0'
                     }`}
                   />
@@ -89,7 +89,7 @@ export default function TopNav() {
             className={({ isActive }: { isActive: boolean }) =>
               `relative px-3 py-1.5 rounded-[6px] whitespace-nowrap transition-colors duration-150 ${
                 isActive
-                  ? 'text-[#2E5AAC] bg-[#EEF2FA]'
+                  ? 'text-[#0E2B6C] bg-[#E9EDF6]'
                   : 'text-[#667085] hover:text-[#101828] hover:bg-[#F2F4F7]'
               }`
             }

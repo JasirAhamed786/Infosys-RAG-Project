@@ -237,7 +237,7 @@ const messagesEndRef = useRef<HTMLDivElement>(null)
               onClick={() => { setSessionMode('new'); setError(null); }}
               className={`flex-1 rounded-md py-2.5 text-sm font-medium transition-colors ${
                 sessionMode === 'new'
-                  ? 'bg-white text-[#2E5AAC] border border-[#D6E0F2]'
+                  ? 'bg-white text-[#0E2B6C] border border-[#C7D2E8]'
                   : 'text-[#667085] hover:text-[#101828]'
               }`}
             >
@@ -253,7 +253,7 @@ const messagesEndRef = useRef<HTMLDivElement>(null)
               onClick={() => { setSessionMode('existing'); setError(null); }}
               className={`flex-1 rounded-md py-2.5 text-sm font-medium transition-colors ${
                 sessionMode === 'existing'
-                  ? 'bg-white text-[#2E5AAC] border border-[#D6E0F2]'
+                  ? 'bg-white text-[#0E2B6C] border border-[#C7D2E8]'
                   : 'text-[#667085] hover:text-[#101828]'
               }`}
             >
@@ -274,7 +274,7 @@ const messagesEndRef = useRef<HTMLDivElement>(null)
                   <select
                     value={mode}
                     onChange={(e) => setMode(e.target.value as CreateSessionModeBackend)}
-                    className="w-full rounded-lg border border-[#D0D5DD] px-4 py-3 text-sm font-medium text-[#101828] bg-white focus:border-[#2E5AAC] focus:outline-none focus:ring-2 focus:ring-[#2E5AAC]/20 disabled:bg-[#F2F4F7]"
+                    className="w-full rounded-lg border border-[#D0D5DD] px-4 py-3 text-sm font-medium text-[#101828] bg-white focus:border-[#0E2B6C] focus:outline-none focus:ring-2 focus:ring-[#0E2B6C]/20 disabled:bg-[#F2F4F7]"
                     disabled={loading}
                   >
                     <option value="Simulator">Simulator — AI-Generated Customer</option>
@@ -291,7 +291,7 @@ const messagesEndRef = useRef<HTMLDivElement>(null)
                     type="text"
                     value={productContext}
                     onChange={(e) => setProductContext(e.target.value)}
-                    className="w-full rounded-lg border border-[#D0D5DD] px-4 py-3 text-sm text-[#101828] placeholder-[#98A2B3] bg-white focus:border-[#2E5AAC] focus:outline-none focus:ring-2 focus:ring-[#2E5AAC]/20 disabled:bg-[#F2F4F7]"
+                    className="w-full rounded-lg border border-[#D0D5DD] px-4 py-3 text-sm text-[#101828] placeholder-[#98A2B3] bg-white focus:border-[#0E2B6C] focus:outline-none focus:ring-2 focus:ring-[#0E2B6C]/20 disabled:bg-[#F2F4F7]"
                     placeholder="e.g., Enterprise SaaS Billing Support"
                     required
                     disabled={loading}
@@ -306,7 +306,7 @@ const messagesEndRef = useRef<HTMLDivElement>(null)
                     type="text"
                     value={persona}
                     onChange={(e) => setPersona(e.target.value)}
-                    className="w-full rounded-lg border border-[#D0D5DD] px-4 py-3 text-sm text-[#101828] placeholder-[#98A2B3] bg-white focus:border-[#2E5AAC] focus:outline-none focus:ring-2 focus:ring-[#2E5AAC]/20 disabled:bg-[#F2F4F7]"
+                    className="w-full rounded-lg border border-[#D0D5DD] px-4 py-3 text-sm text-[#101828] placeholder-[#98A2B3] bg-white focus:border-[#0E2B6C] focus:outline-none focus:ring-2 focus:ring-[#0E2B6C]/20 disabled:bg-[#F2F4F7]"
                     placeholder="e.g., Frustrated Customer demanding a refund"
                     disabled={loading}
                   />
@@ -319,7 +319,7 @@ const messagesEndRef = useRef<HTMLDivElement>(null)
                   <textarea
                     value={scenario}
                     onChange={(e) => setScenario(e.target.value)}
-                    className="w-full rounded-lg border border-[#D0D5DD] px-4 py-3 text-sm text-[#101828] placeholder-[#98A2B3] bg-white min-h-[120px] focus:border-[#2E5AAC] focus:outline-none focus:ring-2 focus:ring-[#2E5AAC]/20 resize-y disabled:bg-[#F2F4F7]"
+                    className="w-full rounded-lg border border-[#D0D5DD] px-4 py-3 text-sm text-[#101828] placeholder-[#98A2B3] bg-white min-h-[120px] focus:border-[#0E2B6C] focus:outline-none focus:ring-2 focus:ring-[#0E2B6C]/20 resize-y disabled:bg-[#F2F4F7]"
                     placeholder="Describe the exact situation the customer is facing..."
                     required
                     disabled={loading}
@@ -330,7 +330,7 @@ const messagesEndRef = useRef<HTMLDivElement>(null)
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full inline-flex items-center justify-center rounded-lg bg-[#2E5AAC] px-8 py-3.5 text-sm font-medium text-white hover:bg-[#274D8F] focus:outline-none focus:ring-2 focus:ring-[#2E5AAC]/30 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="w-full inline-flex items-center justify-center rounded-lg bg-[#0E2B6C] px-8 py-3.5 text-sm font-medium text-white hover:bg-[#0A2154] focus:outline-none focus:ring-2 focus:ring-[#0E2B6C]/30 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 {loading ? (
                   <>
@@ -362,7 +362,7 @@ const messagesEndRef = useRef<HTMLDivElement>(null)
                     type="text"
                     value={existingSessionId}
                     onChange={(e) => setExistingSessionId(e.target.value)}
-                    className="w-full rounded-lg border border-[#D0D5DD] px-4 py-3 text-sm text-[#101828] placeholder-[#98A2B3] bg-white focus:border-[#2E5AAC] focus:outline-none focus:ring-2 focus:ring-[#2E5AAC]/20 disabled:bg-[#F2F4F7]"
+                    className="w-full rounded-lg border border-[#D0D5DD] px-4 py-3 text-sm text-[#101828] placeholder-[#98A2B3] bg-white focus:border-[#0E2B6C] focus:outline-none focus:ring-2 focus:ring-[#0E2B6C]/20 disabled:bg-[#F2F4F7]"
                     placeholder="Paste the session ID from Session Configuration..."
                     required
                     disabled={loading}
@@ -376,7 +376,7 @@ const messagesEndRef = useRef<HTMLDivElement>(null)
               <button
                 type="submit"
                 disabled={loading || !existingSessionId.trim()}
-                className="w-full inline-flex items-center justify-center rounded-lg bg-[#2E5AAC] px-8 py-3.5 text-sm font-medium text-white hover:bg-[#274D8F] focus:outline-none focus:ring-2 focus:ring-[#2E5AAC]/30 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="w-full inline-flex items-center justify-center rounded-lg bg-[#0E2B6C] px-8 py-3.5 text-sm font-medium text-white hover:bg-[#0A2154] focus:outline-none focus:ring-2 focus:ring-[#0E2B6C]/30 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 {loading ? (
                   <>
@@ -442,7 +442,7 @@ const messagesEndRef = useRef<HTMLDivElement>(null)
             <div className="bg-white border border-[#E4E7EC] rounded-[8px] flex flex-col lg:h-[600px] min-h-[480px] overflow-hidden">
               <div className="shrink-0 border-b border-[#E4E7EC] px-5 py-4 flex items-center justify-between bg-white">
                 <div className="flex items-center gap-3">
-                  <div className="h-8 w-8 rounded-full bg-[#EEF2FA] flex items-center justify-center text-[#2E5AAC]">
+                  <div className="h-8 w-8 rounded-full bg-[#E9EDF6] flex items-center justify-center text-[#0E2B6C]">
                     <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                     </svg>
@@ -453,8 +453,8 @@ const messagesEndRef = useRef<HTMLDivElement>(null)
                   </div>
                 </div>
                 {turnStatus === 'pending' && (
-                  <span className="inline-flex items-center gap-1.5 rounded-full border border-[#D6E0F2] bg-[#EEF2FA] px-2.5 py-1 text-[11px] font-medium text-[#2E5AAC]">
-                    <span className="h-1.5 w-1.5 rounded-full bg-[#2E5AAC] animate-pulse" />
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-[#C7D2E8] bg-[#E9EDF6] px-2.5 py-1 text-[11px] font-medium text-[#0E2B6C]">
+                    <span className="h-1.5 w-1.5 rounded-full bg-[#0E2B6C] animate-pulse" />
                     Analyzing turn...
                   </span>
                 )}
@@ -481,7 +481,7 @@ const messagesEndRef = useRef<HTMLDivElement>(null)
                   const displayText = isLastCustomer && typingText ? typingText : msg.content
                   return (
                     <div key={idx} className={`flex ${msg.role === 'customer' ? 'justify-start' : msg.role === 'agent' ? 'justify-end' : 'justify-center'}`}>
-                      <div className={`max-w-[85%] rounded-lg px-4 py-3 ${msg.role === 'customer' ? 'bg-white border border-[#E4E7EC] text-[#101828]' : msg.role === 'agent' ? 'bg-[#2E5AAC] text-white' : 'bg-[#FEF3E2] border border-[#FAD9A8] text-[#7A4E00]'}`}>
+                      <div className={`max-w-[85%] rounded-lg px-4 py-3 ${msg.role === 'customer' ? 'bg-white border border-[#E4E7EC] text-[#101828]' : msg.role === 'agent' ? 'bg-[#0E2B6C] text-white' : 'bg-[#FEF3E2] border border-[#FAD9A8] text-[#7A4E00]'}`}>
                         <div className="flex items-center justify-between gap-3 mb-1.5">
                           <span className={`text-[10px] font-semibold uppercase tracking-wider ${msg.role === 'customer' ? 'text-[#667085]' : msg.role === 'agent' ? 'text-[#E5EBF7]' : 'text-[#B26A00]'}`}>
                             {msg.role === 'customer' ? 'Customer' : msg.role === 'agent' ? 'You' : 'System'}
@@ -495,7 +495,7 @@ const messagesEndRef = useRef<HTMLDivElement>(null)
                         <p className={`text-[13px] leading-relaxed ${msg.role === 'agent' ? 'text-white' : 'text-[#101828]'}`}>
                           {displayText}
                           {isLastCustomer && isTyping && (
-                            <span className="inline-block w-1 h-3 bg-[#2E5AAC] ml-0.5 animate-pulse align-baseline" />
+                            <span className="inline-block w-1 h-3 bg-[#0E2B6C] ml-0.5 animate-pulse align-baseline" />
                           )}
                         </p>
                       </div>
@@ -514,13 +514,13 @@ const messagesEndRef = useRef<HTMLDivElement>(null)
                     value={agentInput}
                     onChange={(e) => setAgentInput(e.target.value)}
                     placeholder="Reply to customer..."
-                    className="flex-1 rounded-lg border border-[#D0D5DD] px-4 py-3 text-sm text-[#101828] placeholder-[#98A2B3] bg-white focus:border-[#2E5AAC] focus:outline-none focus:ring-2 focus:ring-[#2E5AAC]/20 transition-colors disabled:bg-[#F2F4F7]"
+                    className="flex-1 rounded-lg border border-[#D0D5DD] px-4 py-3 text-sm text-[#101828] placeholder-[#98A2B3] bg-white focus:border-[#0E2B6C] focus:outline-none focus:ring-2 focus:ring-[#0E2B6C]/20 transition-colors disabled:bg-[#F2F4F7]"
                     disabled={turnStatus === 'pending' || isTyping}
                   />
                   <button
                     type="submit"
                     disabled={!agentInput.trim() || turnStatus === 'pending' || isTyping}
-                    className="inline-flex items-center justify-center rounded-lg bg-[#2E5AAC] px-6 py-3 text-sm font-medium text-white hover:bg-[#274D8F] focus:outline-none focus:ring-2 focus:ring-[#2E5AAC]/30 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    className="inline-flex items-center justify-center rounded-lg bg-[#0E2B6C] px-6 py-3 text-sm font-medium text-white hover:bg-[#0A2154] focus:outline-none focus:ring-2 focus:ring-[#0E2B6C]/30 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   >
                     {turnStatus === 'pending' ? (
                       <svg className="animate-spin h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
@@ -541,7 +541,7 @@ const messagesEndRef = useRef<HTMLDivElement>(null)
             <div className="bg-white border border-[#E4E7EC] rounded-[8px] lg:h-[600px] min-h-[480px] flex flex-col overflow-hidden">
               <div className="shrink-0 border-b border-[#E4E7EC] px-6 py-5 bg-white">
                 <h3 className="font-semibold text-[#101828] text-base flex items-center gap-2.5">
-                  <span className="w-2 h-2 rounded-full bg-[#2E5AAC]" />
+                  <span className="w-2 h-2 rounded-full bg-[#0E2B6C]" />
                   Real-Time AI Intent & Sentiment
                 </h3>
                 <p className="text-xs text-[#667085] mt-1">Live metrics evaluating the customer's current emotional state.</p>
@@ -553,7 +553,7 @@ const messagesEndRef = useRef<HTMLDivElement>(null)
                     {/* Intent Card */}
                     <div className="rounded-lg bg-white border border-[#E4E7EC] p-6 flex flex-col justify-center">
                       <div className="text-xs font-semibold uppercase tracking-wider text-[#667085] mb-2">Classified Intent</div>
-                      <div className="text-xl md:text-2xl font-semibold text-[#2E5AAC] capitalize leading-tight">
+                      <div className="text-xl md:text-2xl font-semibold text-[#0E2B6C] capitalize leading-tight">
                         {latestIntentSentiment?.intent?.replace(/_/g, ' ') || 'General Question'}
                       </div>
                       <p className="text-[11px] text-[#98A2B3] mt-2">Core reason for contact</p>
@@ -596,7 +596,7 @@ const messagesEndRef = useRef<HTMLDivElement>(null)
                     <div className="rounded-lg bg-white border border-[#E4E7EC] p-6 flex flex-col justify-center">
                       <div className="text-xs font-semibold uppercase tracking-wider text-[#667085] mb-2">Satisfaction Trend</div>
                       <div className="flex items-center gap-3">
-                        <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-[#F2F4F7] border border-[#E4E7EC] text-xl text-[#2E5AAC]">
+                        <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-[#F2F4F7] border border-[#E4E7EC] text-xl text-[#0E2B6C]">
                           {TREND_ICONS[latestIntentSentiment?.satisfaction_trend || 'stable'] || '→'}
                         </div>
                         <div>
@@ -630,7 +630,7 @@ const messagesEndRef = useRef<HTMLDivElement>(null)
             <div className="lg:col-span-2 bg-white border border-[#E4E7EC] rounded-[8px] flex flex-col">
               <div className="shrink-0 border-b border-[#E4E7EC] px-6 py-4 flex justify-between items-center bg-white rounded-t-[8px]">
                 <h3 className="font-semibold text-[#101828] text-sm flex items-center gap-2.5">
-                  <span className="w-2 h-2 rounded-full bg-[#2E5AAC]" />
+                  <span className="w-2 h-2 rounded-full bg-[#0E2B6C]" />
                   Agent Knowledge Base Retrieval
                 </h3>
                 <span className="text-[11px] font-medium text-[#667085] bg-[#F2F4F7] px-2.5 py-1 rounded-md">
@@ -645,7 +645,7 @@ const messagesEndRef = useRef<HTMLDivElement>(null)
                       {latestKnowledgeResults.results.map((result, idx) => (
                         <div key={idx} className="rounded-lg border border-[#E4E7EC] bg-white p-5">
                           <div className="flex items-center justify-between gap-2 mb-3">
-                            <span className="inline-flex items-center justify-center h-6 w-6 rounded-full bg-[#EEF2FA] text-[10px] font-semibold text-[#2E5AAC] border border-[#D6E0F2]">
+                            <span className="inline-flex items-center justify-center h-6 w-6 rounded-full bg-[#E9EDF6] text-[10px] font-semibold text-[#0E2B6C] border border-[#C7D2E8]">
                               {idx + 1}
                             </span>
                             <span className="text-[10px] font-semibold text-[#12B76A] bg-[#E7F7EF] border border-[#B7E8CF] px-2.5 py-1 rounded-lg">
@@ -663,7 +663,7 @@ const messagesEndRef = useRef<HTMLDivElement>(null)
                           </div>
                           {result?.why_relevant && (
                             <div className="pt-3 border-t border-[#E4E7EC]">
-                              <div className="text-[10px] font-semibold uppercase tracking-wider text-[#2E5AAC] mb-1">
+                              <div className="text-[10px] font-semibold uppercase tracking-wider text-[#0E2B6C] mb-1">
                                 AI Reasoning
                               </div>
                               <p className="text-[11px] text-[#667085] leading-relaxed line-clamp-2">{result.why_relevant}</p>
@@ -701,7 +701,7 @@ const messagesEndRef = useRef<HTMLDivElement>(null)
             <div className="lg:col-span-1 bg-white border border-[#E4E7EC] rounded-[8px] flex flex-col">
               <div className="shrink-0 border-b border-[#E4E7EC] px-6 py-4 flex justify-between items-center bg-white rounded-t-[8px]">
                 <h3 className="font-semibold text-[#101828] text-sm flex items-center gap-2.5">
-                  <span className="w-2 h-2 rounded-full bg-[#2E5AAC]" />
+                  <span className="w-2 h-2 rounded-full bg-[#0E2B6C]" />
                   Live Coaching
                 </h3>
               </div>
@@ -711,8 +711,8 @@ const messagesEndRef = useRef<HTMLDivElement>(null)
                     {latestCoachingSuggestion.coaching_tips?.length > 0 && (
                       <div className="w-full text-left mb-4 space-y-2">
                         {latestCoachingSuggestion.coaching_tips.map((tip, i) => (
-                          <div key={i} className="rounded-lg bg-[#EEF2FA] border border-[#D6E0F2] px-3 py-2 text-left">
-                            <div className="text-[10px] font-semibold uppercase tracking-wider text-[#2E5AAC] mb-0.5">Tip {i + 1}</div>
+                          <div key={i} className="rounded-lg bg-[#E9EDF6] border border-[#C7D2E8] px-3 py-2 text-left">
+                            <div className="text-[10px] font-semibold uppercase tracking-wider text-[#0E2B6C] mb-0.5">Tip {i + 1}</div>
                             <p className="text-[12px] text-[#101828] leading-relaxed">{tip}</p>
                           </div>
                         ))}
@@ -726,7 +726,7 @@ const messagesEndRef = useRef<HTMLDivElement>(null)
                           type="button"
                           onClick={() => setAgentInput(latestCoachingSuggestion.suggested_response ?? '')}
                           disabled={turnStatus === 'pending' || isTyping}
-                          className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-[#2E5AAC] px-3 py-1.5 text-xs font-medium text-white hover:bg-[#274D8F] focus:outline-none focus:ring-2 focus:ring-[#2E5AAC]/30 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                          className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-[#0E2B6C] px-3 py-1.5 text-xs font-medium text-white hover:bg-[#0A2154] focus:outline-none focus:ring-2 focus:ring-[#0E2B6C]/30 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                         >
                           <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />

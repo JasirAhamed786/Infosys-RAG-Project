@@ -21,7 +21,7 @@ export default function ReportsPlaceholder() {
             <div className="mt-3 space-y-2">
               {Array.from({ length: 4 }).map((_, idx) => (
                 <div key={idx} className="flex items-center gap-3">
-                  <div className="h-2 w-2 rounded-full bg-[#2E5AAC]" />
+                  <div className="h-2 w-2 rounded-full bg-[#0E2B6C]" />
                   <div className="h-4 bg-[#E4E7EC] rounded w-2/3 animate-pulse" />
                 </div>
               ))}

@@ -78,7 +78,7 @@ export default function SessionConfig() {
                 <select
                   value={form.mode}
                   onChange={(e) => setForm((prev) => ({ ...prev, mode: e.target.value as ModeUi }))}
-                  className="w-full appearance-none rounded-lg border border-[#D0D5DD] bg-white px-4 py-2.5 text-sm font-medium text-[#101828] focus:border-[#2E5AAC] focus:outline-none focus:ring-2 focus:ring-[#2E5AAC]/20 disabled:bg-[#F2F4F7] cursor-pointer"
+                  className="w-full appearance-none rounded-lg border border-[#D0D5DD] bg-white px-4 py-2.5 text-sm font-medium text-[#101828] focus:border-[#0E2B6C] focus:outline-none focus:ring-2 focus:ring-[#0E2B6C]/20 disabled:bg-[#F2F4F7] cursor-pointer"
                   disabled={loading}
                 >
                   <option value="Simulator">Simulator (Automated AI Roleplay)</option>
@@ -92,7 +92,7 @@ export default function SessionConfig() {
                 </div>
               </div>
               <div className="flex items-center gap-2 text-xs text-[#667085] mt-2.5">
-                <span className="inline-block h-1.5 w-1.5 rounded-full bg-[#2E5AAC]" />
+                <span className="inline-block h-1.5 w-1.5 rounded-full bg-[#0E2B6C]" />
                 {form.mode}
               </div>
             </div>
@@ -106,7 +106,7 @@ export default function SessionConfig() {
             </label>
             <input
               type="text"
-              className="w-full rounded-lg border border-[#D0D5DD] px-4 py-2.5 text-sm text-[#101828] placeholder-[#98A2B3] focus:border-[#2E5AAC] focus:outline-none focus:ring-2 focus:ring-[#2E5AAC]/20 disabled:bg-[#F2F4F7] transition-colors"
+              className="w-full rounded-lg border border-[#D0D5DD] px-4 py-2.5 text-sm text-[#101828] placeholder-[#98A2B3] focus:border-[#0E2B6C] focus:outline-none focus:ring-2 focus:ring-[#0E2B6C]/20 disabled:bg-[#F2F4F7] transition-colors"
               value={form.product_context}
               onChange={(e) => setForm((prev) => ({ ...prev, product_context: e.target.value }))}
               placeholder="e.g., Retail Banking Support, SaaS Enterprise Sales"
@@ -122,7 +122,7 @@ export default function SessionConfig() {
             </label>
             <input
               type="text"
-              className="w-full rounded-lg border border-[#D0D5DD] px-4 py-2.5 text-sm text-[#101828] placeholder-[#98A2B3] focus:border-[#2E5AAC] focus:outline-none focus:ring-2 focus:ring-[#2E5AAC]/20 disabled:bg-[#F2F4F7] transition-colors"
+              className="w-full rounded-lg border border-[#D0D5DD] px-4 py-2.5 text-sm text-[#101828] placeholder-[#98A2B3] focus:border-[#0E2B6C] focus:outline-none focus:ring-2 focus:ring-[#0E2B6C]/20 disabled:bg-[#F2F4F7] transition-colors"
               value={form.persona}
               onChange={(e) => setForm((prev) => ({ ...prev, persona: e.target.value }))}
               placeholder="e.g., Frustrated Customer, Tier 2 Agent"
@@ -137,7 +137,7 @@ export default function SessionConfig() {
               <span className="text-[#F04438] ml-1">*</span>
             </label>
             <textarea
-              className="w-full rounded-lg border border-[#D0D5DD] px-4 py-3 text-sm text-[#101828] placeholder-[#98A2B3] min-h-[130px] focus:border-[#2E5AAC] focus:outline-none focus:ring-2 focus:ring-[#2E5AAC]/20 disabled:bg-[#F2F4F7] transition-colors resize-y leading-relaxed"
+              className="w-full rounded-lg border border-[#D0D5DD] px-4 py-3 text-sm text-[#101828] placeholder-[#98A2B3] min-h-[130px] focus:border-[#0E2B6C] focus:outline-none focus:ring-2 focus:ring-[#0E2B6C]/20 disabled:bg-[#F2F4F7] transition-colors resize-y leading-relaxed"
               value={form.scenario}
               onChange={(e) => setForm((prev) => ({ ...prev, scenario: e.target.value }))}
               placeholder="Provide context on the user's issue. For example: The customer is calling to dispute a recurring late fee on their credit card after scheduling an automatic payment..."
@@ -152,7 +152,7 @@ export default function SessionConfig() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full sm:w-auto min-w-[220px] inline-flex items-center justify-center rounded-lg bg-[#2E5AAC] px-8 py-3.5 text-sm font-medium text-white hover:bg-[#274D8F] focus:outline-none focus:ring-2 focus:ring-[#2E5AAC]/30 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="w-full sm:w-auto min-w-[220px] inline-flex items-center justify-center rounded-lg bg-[#0E2B6C] px-8 py-3.5 text-sm font-medium text-white hover:bg-[#0A2154] focus:outline-none focus:ring-2 focus:ring-[#0E2B6C]/30 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             {loading ? (
               <>

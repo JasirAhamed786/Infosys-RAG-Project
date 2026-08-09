@@ -112,8 +112,8 @@ return (
         <div>
           <div className="flex items-center gap-3">
             <h1 className="text-2xl font-semibold text-[#101828] tracking-tight">Knowledge Base Upload</h1>
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-[#D6E0F2] bg-[#EEF2FA] px-3 py-1 text-xs font-medium text-[#2E5AAC]">
-              <span className="h-1.5 w-1.5 rounded-full bg-[#2E5AAC]" />
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-[#C7D2E8] bg-[#E9EDF6] px-3 py-1 text-xs font-medium text-[#0E2B6C]">
+              <span className="h-1.5 w-1.5 rounded-full bg-[#0E2B6C]" />
               RAG Ingestion
             </span>
           </div>
@@ -128,7 +128,7 @@ return (
         <div
           className={`relative rounded-lg border-2 border-dashed transition-colors duration-200 p-8 text-center ${
             dragActive
-              ? 'border-[#2E5AAC] bg-[#EEF2FA]'
+              ? 'border-[#0E2B6C] bg-[#E9EDF6]'
               : 'border-[#D0D5DD] bg-[#FAFBFC] hover:border-[#98A2B3]'
           }`}
           onDragEnter={(e) => {
@@ -157,7 +157,7 @@ return (
         >
           <div className="flex flex-col sm:flex-row items-center justify-between gap-6 max-w-3xl mx-auto">
             <div className="flex items-center gap-4 text-left">
-              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg bg-[#2E5AAC] text-white">
+              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg bg-[#0E2B6C] text-white">
                 <svg className="h-7 w-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                 </svg>
@@ -171,7 +171,7 @@ return (
             </div>
 
             <div className="shrink-0">
-              <label className="relative inline-flex items-center justify-center cursor-pointer rounded-lg bg-white border border-[#D0D5DD] px-5 py-2.5 text-sm font-medium text-[#101828] hover:bg-[#F2F4F7] focus-within:ring-2 focus-within:ring-[#2E5AAC]/30 transition-colors">
+              <label className="relative inline-flex items-center justify-center cursor-pointer rounded-lg bg-white border border-[#D0D5DD] px-5 py-2.5 text-sm font-medium text-[#101828] hover:bg-[#F2F4F7] focus-within:ring-2 focus-within:ring-[#0E2B6C]/30 transition-colors">
                 <input
                   type="file"
                   className="sr-only"
@@ -192,15 +192,15 @@ return (
 
           {/* Selected File Card */}
           {state.file && (
-            <div className="mt-6 rounded-lg border border-[#D6E0F2] bg-white p-4 flex items-center justify-between text-left transition-all animate-fadeIn">
+            <div className="mt-6 rounded-lg border border-[#C7D2E8] bg-white p-4 flex items-center justify-between text-left transition-all animate-fadeIn">
               <div className="flex items-center gap-3.5 min-w-0">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[#EEF2FA] text-[#2E5AAC]">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[#E9EDF6] text-[#0E2B6C]">
                   <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
                 </div>
                 <div className="min-w-0 flex-1">
-                  <div className="text-xs font-medium uppercase tracking-wider text-[#2E5AAC]">Ready for Ingestion</div>
+                  <div className="text-xs font-medium uppercase tracking-wider text-[#0E2B6C]">Ready for Ingestion</div>
                   <div className="font-medium text-[#101828] truncate text-sm mt-0.5">{state.fileName}</div>
                 </div>
               </div>
@@ -219,7 +219,7 @@ return (
             type="button"
             onClick={onUpload}
             disabled={loading || !state.file}
-            className="inline-flex items-center justify-center rounded-lg bg-[#2E5AAC] px-6 py-3.5 text-sm font-medium text-white hover:bg-[#274D8F] focus:outline-none focus:ring-2 focus:ring-[#2E5AAC]/30 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="inline-flex items-center justify-center rounded-lg bg-[#0E2B6C] px-6 py-3.5 text-sm font-medium text-white hover:bg-[#0A2154] focus:outline-none focus:ring-2 focus:ring-[#0E2B6C]/30 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             {loading ? (
               <>

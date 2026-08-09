@@ -12,12 +12,12 @@ export default {
         // Text
         ink: '#101828',         // primary text
         inkmuted: '#667085',    // secondary / muted text
-        // Accent — single deliberate deep desaturated blue
+        // Accent — deep corporate navy (ACCA-style, professional/trustworthy)
         accent: {
-          DEFAULT: '#2E5AAC',
-          hover: '#274D8F',
-          soft: '#EEF2FA',      // tinted active / selected surface
-          bordsoft: '#D6E0F2',  // soft accent border
+          DEFAULT: '#0E2B6C',
+          hover: '#0A2154',
+          soft: '#E9EDF6',      // tinted active / selected surface
+          bordsoft: '#C7D2E8',  // soft accent border
         },
         // Semantic status — status only, never decoration
         success: {

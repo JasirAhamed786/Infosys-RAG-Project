@@ -18,8 +18,8 @@ return (
         <div>
           <div className="flex items-center gap-3">
             <h1 className="text-2xl font-semibold text-[#101828] tracking-tight">Coaching Feed</h1>
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-[#D6E0F2] bg-[#EEF2FA] px-3 py-1 text-xs font-medium text-[#2E5AAC]">
-              <span className="h-1.5 w-1.5 rounded-full bg-[#2E5AAC]" />
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-[#C7D2E8] bg-[#E9EDF6] px-3 py-1 text-xs font-medium text-[#0E2B6C]">
+              <span className="h-1.5 w-1.5 rounded-full bg-[#0E2B6C]" />
               Live
             </span>
           </div>
@@ -38,7 +38,7 @@ return (
       <div className="mt-8">
         {!isSessionActive ? (
           <div className="rounded-[8px] border border-[#E4E7EC] bg-[#FAFBFC] p-8 text-center">
-            <div className="mx-auto h-14 w-14 rounded-lg bg-[#EEF2FA] text-[#2E5AAC] flex items-center justify-center">
+            <div className="mx-auto h-14 w-14 rounded-lg bg-[#E9EDF6] text-[#0E2B6C] flex items-center justify-center">
               <svg className="h-7 w-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
               </svg>
@@ -57,7 +57,7 @@ return (
                   <div className="text-sm font-semibold text-[#101828]">Coaching Tips</div>
                   <div className="text-xs text-[#667085] mt-0.5">Session {sessionId ? sessionId.slice(0, 8) : ''}... — latest turn</div>
                 </div>
-                <span className="text-[10px] font-medium uppercase tracking-wider text-[#2E5AAC] bg-[#EEF2FA] border border-[#D6E0F2] px-2.5 py-1 rounded-full">
+                <span className="text-[10px] font-medium uppercase tracking-wider text-[#0E2B6C] bg-[#E9EDF6] border border-[#C7D2E8] px-2.5 py-1 rounded-full">
                   {latestCoachingSuggestion.coaching_tips?.length ?? 0} suggestion(s)
                 </span>
               </div>
@@ -66,7 +66,7 @@ return (
                 {(latestCoachingSuggestion.coaching_tips ?? []).length > 0 ? (
                   latestCoachingSuggestion.coaching_tips!.map((tip, idx) => (
                     <div key={idx} className="rounded-lg bg-white border border-[#E4E7EC] p-4 flex gap-4">
-                      <div className="shrink-0 h-9 w-9 rounded-lg bg-[#EEF2FA] text-[#2E5AAC] text-sm font-semibold flex items-center justify-center border border-[#D6E0F2]">
+                      <div className="shrink-0 h-9 w-9 rounded-lg bg-[#E9EDF6] text-[#0E2B6C] text-sm font-semibold flex items-center justify-center border border-[#C7D2E8]">
                         {idx + 1}
                       </div>
                       <div>
@@ -87,7 +87,7 @@ return (
                     <ul className="space-y-1.5">
                       {latestCoachingSuggestion.communication_tips!.map((tip, idx) => (
                         <li key={idx} className="flex items-start gap-2 text-sm text-[#344054]">
-                          <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-[#2E5AAC] shrink-0" />
+                          <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-[#0E2B6C] shrink-0" />
                           {tip}
                         </li>
                       ))}
@@ -126,7 +126,7 @@ return (
                   </div>
                   <div className="h-2 rounded-full bg-[#EAECF0] overflow-hidden">
                     <div
-                      className="h-full rounded-full bg-[#2E5AAC]"
+                      className="h-full rounded-full bg-[#0E2B6C]"
                       style={{ width: `${Math.min(100, Math.max(0, (latestCoachingSuggestion.confidence ?? 0) * 100))}%` }}
                     />
                   </div>

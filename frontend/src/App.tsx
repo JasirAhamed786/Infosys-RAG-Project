@@ -31,11 +31,11 @@ export default function App() {
             <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6">
               <div>
                 <div className="inline-flex items-center gap-2 rounded-full border border-[#E4E7EC] bg-white px-3.5 py-1.5 text-xs font-semibold text-[#667085]">
-                  <span className="h-1.5 w-1.5 rounded-full bg-[#2E5AAC]" />
+                  <span className="h-1.5 w-1.5 rounded-full bg-[#0E2B6C]" />
                   System ready
                 </div>
                 <h1 className="mt-4 text-3xl md:text-4xl font-semibold tracking-tight text-[#101828]">
-                  Clario — AI <span className="text-[#2E5AAC]">Coaching</span> Assistant
+                  Clario — AI <span className="text-[#0E2B6C]">Coaching</span> Assistant
                 </h1>
                 <p className="mt-2 text-sm md:text-base text-[#667085] max-w-xl">
                   Configure a session simulator or ingest a knowledge base to power faster, more accurate live coaching.

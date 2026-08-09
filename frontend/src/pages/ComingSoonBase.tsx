@@ -11,8 +11,8 @@ type Props = {
 }
 
 const BADGE: Record<NonNullable<Props['badgeColor']>, string> = {
-  blue: 'bg-[#EEF2FA] border-[#D6E0F2] text-[#2E5AAC]',
-  indigo: 'bg-[#EEF2FA] border-[#D6E0F2] text-[#2E5AAC]',
+  blue: 'bg-[#E9EDF6] border-[#C7D2E8] text-[#0E2B6C]',
+  indigo: 'bg-[#E9EDF6] border-[#C7D2E8] text-[#0E2B6C]',
   emerald: 'bg-[#E7F7EF] border-[#B7E8CF] text-[#12B76A]',
   rose: 'bg-[#FDEBEA] border-[#F6B5B0] text-[#F04438]',
 }

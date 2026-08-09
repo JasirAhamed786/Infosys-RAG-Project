@@ -58,3 +58,13 @@ Analytics page = RESTYLE-ONLY (zero structural changes).
 ## Final
 - [x] Confirm functionality (start session, turn, navigation) unchanged (style-only; no props/state/API touched)
 - [x] Confirm no backend files touched (only frontend/src/** + index.html + package.json read/edited)
+
+## Follow-up — ACCA corporate professional pass (DONE)
+- [x] Shift accent token from light `#2E5AAC` to deep corporate navy `#0E2B6C` (hover `#0A2154`, soft `#E9EDF6`, bord `#C7D2E8`) in tailwind.config.js
+- [x] Rewrite Home.tsx fully onto token system (was still old glass/gradient/slate/emoji style — the main "unprofessional" outlier)
+  - Flat `surface` hero, token navy accent, cool grey borders `#E4E7EC`, subtle `shadow-card`/`shadow-cardh`
+  - Removed gradients, blur orbs, emoji, animated shimmer; flat progress bars + accessible navy accuracy dial
+- [x] Globally remap remaining old-light-blue accent hexes to navy across all TSX pages (App, TopNav, SessionConfig, KnowledgeBaseUpload, LiveConsole, ComingSoonBase, CoachingFeed, Reports, Escalation)
+- [x] `npm run build` passes (25.97 kB css / 389.27 kB js)
+- [x] `npx tsc --noEmit` passes
+- [x] No backend files touched; no logic/props/state/API changed (pure color/class swaps)
