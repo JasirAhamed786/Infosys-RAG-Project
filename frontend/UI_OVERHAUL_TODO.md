@@ -33,20 +33,28 @@ Analytics page = RESTYLE-ONLY (zero structural changes).
 - [x] `npm run build` passes
 - [x] Commit
 
-## Task 5 — Session Config, KB Upload, Coaching Feed, Escalation Alerts
-- [ ] Apply token system to all four
-- [ ] Remove scaffold/placeholder visual language (these read live data)
-- [ ] Restyle empty states (consistent icon + muted tone)
-- [ ] `npm run build` passes
-- [ ] Commit
+## Task 5 — Session Config, KB Upload, Coaching Feed, Escalation Alerts (DONE)
+- [x] Apply token system to all four
+  - [x] SessionConfig.tsx (removed empty header pill, removed dev-facing "maps to backend" filler)
+  - [x] KnowledgeBaseUpload.tsx (indigo → single accent, removed backend-format filler + dev Tip line)
+  - [x] CoachingFeedPlaceholder.tsx (M3 badge → Live, gradient empty state flattened)
+  - [x] EscalationAlertsPlaceholder.tsx (M3 badge → Live, signature left-border risk treatment)
+  - [x] ComingSoonBase.tsx (shared chrome for reports/analytics tokenized)
+  - [x] ReportsPlaceholder.tsx (M4 coming-soon skeleton tokenized, structure intact)
+- [x] Remove scaffold/placeholder visual language (these read live data)
+- [x] Restyle empty states (consistent icon + muted tone)
+- [x] `npm run build` passes
+- [x] `npx tsc --noEmit` passes
+- [x] Commit 77e27aa
 
-## Task 6 — Analytics page (RESTYLE ONLY, hard constraint)
-- [ ] Token colors/spacing/typography/borders on existing elements only
-- [ ] No add/remove/reorder/restructure
-- [ ] Report what changed; confirm nothing restructured
-- [ ] `npm run build` passes
-- [ ] Commit
+## Task 6 — Analytics page (RESTYLE ONLY, hard constraint) (DONE)
+- [x] Token colors/spacing/typography/borders on existing children (header/badge via ComingSoonBase)
+- [x] No add/remove/reorder/restructure — only class-value swaps in place
+- [x] Report what changed; confirm nothing restructured
+- [x] `npm run build` passes
+- [x] `npx tsc --noEmit` passes
+- [x] Commit c6ab79a
 
 ## Final
-- [ ] Confirm functionality (start session, turn, navigation) unchanged
-- [ ] Confirm no backend files touched
+- [x] Confirm functionality (start session, turn, navigation) unchanged (style-only; no props/state/API touched)
+- [x] Confirm no backend files touched (only frontend/src/** + index.html + package.json read/edited)
