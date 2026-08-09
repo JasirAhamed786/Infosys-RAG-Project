@@ -96,11 +96,11 @@ export default function Sidebar() {
       initial={false}
       animate={{ width: collapsed ? 80 : 248 }}
       transition={{ type: 'spring', stiffness: 260, damping: 30 }}
-className="relative sticky top-0 h-screen shrink-0 flex flex-col border-r border-slate-200 bg-gradient-to-b from-white to-[#eef7f5] overflow-hidden"
+className="relative sticky top-0 h-screen shrink-0 flex flex-col border-r border-[#16283c] bg-gradient-to-b from-[#0A1A2E] via-[#0E2740] to-[#0B2A37] overflow-hidden shadow-[1px_0_16px_-4px_rgba(0,0,0,0.45)]"
     >
       {/* Brand */}
       <div className="flex items-center gap-3 px-4 py-5 h-16 shrink-0">
-        <div className="brand-grad h-10 w-10 shrink-0 rounded-xl text-white flex items-center justify-center text-base font-bold shadow-[0_4px_14px_rgba(14,116,144,0.35)]">
+        <div className="brand-grad h-10 w-10 shrink-0 rounded-xl text-white flex items-center justify-center text-base font-bold shadow-[0_4px_14px_rgba(14,116,144,0.45)]">
           C
         </div>
         <AnimatePresence>
@@ -112,8 +112,8 @@ className="relative sticky top-0 h-screen shrink-0 flex flex-col border-r border
               transition={{ duration: 0.18 }}
               className="leading-tight whitespace-nowrap"
             >
-              <div className="font-display font-semibold text-[#101828] text-lg tracking-tight">Clario</div>
-              <div className="text-[11px] font-medium text-[#667085]">AI Coaching Studio</div>
+              <div className="font-display font-semibold text-white text-lg tracking-tight">Clario</div>
+              <div className="text-[11px] font-medium text-[#9DB7CF]">AI Coaching Studio</div>
             </motion.div>
           )}
         </AnimatePresence>
@@ -130,8 +130,8 @@ className="relative sticky top-0 h-screen shrink-0 flex flex-col border-r border
                 title={collapsed ? item.label : undefined}
                 className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors justify-center ${collapsed ? 'flex-col gap-1 py-3' : ''} ${
                   isActive
-                    ? 'bg-gradient-to-r from-[#E9EDF6] to-[#E7F7EF] text-[#0E2B6C] border border-[#C7D2E8]'
-                    : 'text-[#667085] hover:text-[#101828] hover:bg-[#F2F6FB] border border-transparent'
+                    ? 'bg-gradient-to-r from-[#0E7490] to-[#0B6E4F] text-white border border-[#22A7C9]/40 shadow-[0_4px_12px_-2px_rgba(14,116,144,0.5)]'
+                    : 'text-[#A9BFD6] hover:text-white hover:bg-white/10 border border-transparent'
                 }`}
               >
                 <span className="shrink-0">{item.icon}</span>
@@ -165,15 +165,15 @@ className="relative sticky top-0 h-screen shrink-0 flex flex-col border-r border
       </nav>
 
 {/* Session status + collapse footer */}
-      <div className="px-3 py-4 shrink-0 border-t border-slate-200 space-y-2">
+      <div className="px-3 py-4 shrink-0 border-t border-[#16283c] space-y-2">
         <div
           className={`flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium ${
             isSessionActive
               ? 'bg-[#E7F7EF] border border-[#B7E8CF] text-[#0F6E44]'
-              : 'bg-[#F2F6FB] border border-[#E4E7EC] text-[#667085]'
+              : 'bg-white/5 border border-white/10 text-[#A9BFD6]'
           }`}
         >
-          <span className={`h-2 w-2 rounded-full shrink-0 ${isSessionActive ? 'bg-[#12B76A] glow-pulse' : 'bg-[#C7CED9]'}`} />
+          <span className={`h-2 w-2 rounded-full shrink-0 ${isSessionActive ? 'bg-[#12B76A] glow-pulse' : 'bg-[#5A7A96]'}`} />
           <AnimatePresence>
             {!collapsed && (
               <motion.span
@@ -191,7 +191,7 @@ className="relative sticky top-0 h-screen shrink-0 flex flex-col border-r border
 
         <button
           onClick={() => setCollapsed((c) => !c)}
-          className="w-full flex items-center justify-center gap-2 rounded-lg border border-[#e2ebf6] bg-white px-3 py-2 text-xs font-medium text-[#667085] hover:text-[#0E2B6C] hover:border-[#C7D2E8] transition-colors"
+          className="w-full flex items-center justify-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs font-medium text-[#A9BFD6] hover:text-white hover:bg-white/10 hover:border-white/20 transition-colors"
           title={collapsed ? 'Expand navigation' : 'Collapse navigation'}
         >
           <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
