@@ -63,4 +63,7 @@ npm run dev -- --port 5173
   - `/analytics`
 - API validation: follow `backend/README.md` and `frontend/README.md` for route details and test flows.
 
+## License
+This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
+
 
