@@ -13,7 +13,7 @@ Behavior:
     - conversation stage/turn index
     - unresolved-issue indicators (e.g. repeated requests, high frustration)
 - Outputs strict JSON:
-    - escalation_risk: number 0-1
+    - escalation_risk: number 0-100
     - risk_level: "low" | "medium" | "high"
     - reasoning: array of short reasons
     - recommended_action: a short suggested action
@@ -70,10 +70,10 @@ def run_escalation_agent(
     customer_message: str = "",
     **_: Any,
 ) -> dict:
-    """Assess escalation risk using Gemini.
+    """Assess escalation risk.
 
-    Returns a dict with keys: agent, turn_index, escalation_risk, risk_level,
-    reasoning, recommended_action, alert_triggered.
+    Returns a dict with keys: agent, turn_index, escalation_risk (0-100),
+    risk_level, reasoning, recommended_action, alert_triggered.
 
     On a real API error, returns a safe fallback so the pipeline never crashes.
     """
@@ -100,7 +100,7 @@ Assess escalation risk. Output STRICT JSON ONLY."""
     result = {
         "agent": "escalation_risk",
         "turn_index": turn_index,
-        "escalation_risk": 0.0,
+        "escalation_risk": 0,
         "risk_level": "low",
         "reasoning": [],
         "recommended_action": "",
@@ -130,11 +130,10 @@ Assess escalation risk. Output STRICT JSON ONLY."""
             risk = 0.0
         risk = max(0.0, min(1.0, risk))
 
-        risk_level = str(gres.get("risk_level", "low")).lower()
-        if risk_level not in ("low", "medium", "high", "low_risk", "medium_risk", "high_risk"):
-            risk_level = "high" if risk >= 0.75 else ("medium" if risk >= 0.45 else "low")
-        if risk_level.endswith("_risk"):
-            risk_level = risk_level.split("_risk")[0]
+        # Derive risk_level from the numeric score server-side rather than
+        # trusting the LLM's risk_level string blindly. This guarantees the
+        # displayed score and the risk_level label always agree (Bug 1).
+        risk_level = "high" if risk >= 0.75 else ("medium" if risk >= 0.45 else "low")
 
         raw_reasons = gres.get("reasoning", [])
         if isinstance(raw_reasons, list):
@@ -144,13 +143,16 @@ Assess escalation risk. Output STRICT JSON ONLY."""
         else:
             reasons = []
 
-        result["escalation_risk"] = risk
+        # Scale escalation_risk to a 0-100 score so frontend consumers that
+        # render "/100" (e.g. the Escalation Alerts page) show a score that
+        # agrees with risk_level — e.g. 0.81 -> 81/100 + "high".
+        result["escalation_risk"] = int(round(risk * 100))
         result["risk_level"] = risk_level
         result["reasoning"] = reasons
         result["recommended_action"] = str(
             gres.get("recommended_action", "") or ""
         ).strip()
-        result["alert_triggered"] = bool(gres.get("alert_triggered", risk_level == "high"))
+        result["alert_triggered"] = risk_level == "high"
 
         return result
 
@@ -174,7 +176,7 @@ def _fallback(
 
     risk_level = "high" if risk >= 0.75 else ("medium" if risk >= 0.45 else "low")
 
-    result["escalation_risk"] = risk
+    result["escalation_risk"] = int(round(risk * 100))
     result["risk_level"] = risk_level
     result["reasoning"] = [
         f"Customer sentiment indicates {sentiment or 'neutral'} emotional state.",
@@ -185,5 +187,5 @@ def _fallback(
         else "Continue monitoring and attempt to resolve in current tier."
     )
     result["alert_triggered"] = risk_level == "high"
-    result["note"] = "fallback used — Gemini unavailable or errored"
+    result["note"] = "fallback used — Groq unavailable or errored"
     return result
