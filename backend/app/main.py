@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
 
-app = FastAPI(title="AI Customer Support Coaching Assistant - Backend (Milestone 2)")
+app = FastAPI(title="AI Customer Support Coaching Assistant - Backend (Milestone 3)")
 
 app.add_middleware(
     CORSMiddleware,
@@ -16,7 +16,7 @@ app.add_middleware(
 
 @app.get("/api/health")
 def health():
-    return {"status": "ok", "milestone": "2"}
+    return {"status": "ok", "milestone": "3"}
 
 
 @app.on_event("startup")
@@ -36,7 +36,7 @@ def startup_log():
     if settings.GEMINI_API_KEY:
         print(f"[startup] Gemini client configured with model: {settings.GEMINI_KNOWLEDGE_MODEL}")
     else:
-        print("[startup] WARNING: GEMINI_API_KEY not set. Knowledge agent will use fallbacks.")
+        print("[startup] WARNING: GEMINI_API_KEY not set. Knowledge, Coaching & Escalation agents will use fallbacks.")
 
 
 # Milestone 1 routers
@@ -53,14 +53,22 @@ from app.routers.conversation import router as conversation_router
 app.include_router(simulator_router, prefix="/api")
 app.include_router(conversation_router, prefix="/api")
 
-# Milestone 3/4 scaffolding routes (stubs — will be replaced later)
+# Milestone 3 routers — Coaching + Escalation agents are real (Gemini),
+# wired into the pipeline; Manual mode is handled inside conversation_router
+# above (see backend/app/routers/conversation.py); Replay mode gets its own
+# router since it has upload/step-through endpoints conversation_turn doesn't.
 from app.routers.coaching import router as coaching_router
 from app.routers.escalation import router as escalation_router
-from app.routers.reports import router as reports_router
-from app.routers.analytics import router as analytics_router
+from app.routers import replay as replay_router
 
 app.include_router(coaching_router, prefix="/api")
 app.include_router(escalation_router, prefix="/api")
+app.include_router(replay_router.router, prefix="/api")
+
+# Milestone 4 scaffolding routes (stubs — will be replaced later)
+from app.routers.reports import router as reports_router
+from app.routers.analytics import router as analytics_router
+
 app.include_router(reports_router, prefix="/api")
 app.include_router(analytics_router, prefix="/api")
 
@@ -69,15 +77,18 @@ app.include_router(analytics_router, prefix="/api")
 def root():
     return {
         "app": "Clario - AI Customer Support Coaching Assistant",
-        "milestone": "2",
+        "milestone": "3",
         "features": [
-            "Session Configuration",
+            "Session Configuration — Simulator, Manual, and Replay modes",
             "Knowledge Base Upload + RAG (shared ChromaDB collection)",
             "Customer Simulator Agent (Groq Llama 3.3 70B)",
-            "Intent & Sentiment Analysis Agent (Groq Llama 3.1 8B)",
-            "Knowledge Recommendation Agent (Gemini 2.0 Flash)",
-            "Orchestration Pipeline with staged execution",
-            "Live Console with real-time streaming",
+            "Intent & Sentiment Analysis Agent (Groq Llama 3.3 70B)",
+            "Knowledge Recommendation Agent (Gemini)",
+            "Coaching & Response Suggestion Agent (Gemini)",
+            "Escalation Risk Monitor Agent (Gemini)",
+            "Orchestration Pipeline with staged, parallelized execution",
+            "Manual Mode — paste real customer messages for live coaching",
+            "Replay Mode — upload + step through a past transcript",
+            "Live Console with persistent session state across navigation",
         ],
     }
-

@@ -133,6 +133,29 @@ export interface ConversationTurnResponse {
   }
 }
 
+// ─── Milestone 3: Replay Mode ──────────────────────────────────────
+
+export interface ReplayUploadResponse {
+  session_id: string
+  total_turns: number
+  position: number
+}
+
+export interface ReplayNextResponse {
+  session_id: string
+  done: boolean
+  role: 'customer' | 'agent' | null
+  content: string | null
+  turn_index: number
+  position: number
+  total_turns: number
+  intent_sentiment: ConversationTurnResponse['intent_sentiment'] | null
+  knowledge: ConversationTurnResponse['knowledge'] | null
+  coaching: ConversationTurnResponse['coaching'] | null
+  escalation: ConversationTurnResponse['escalation'] | null
+  customer_simulation: ConversationTurnResponse['customer_simulation'] | null
+}
+
 const API_BASE = 'http://127.0.0.1:8000'
 
 async function parseErrorBody(res: Response): Promise<string> {
@@ -226,6 +249,43 @@ export function getSimulatorStreamUrl(sessionId: string, agentMessage: string, t
     turn_index: turnIndex.toString(),
   })
   return `${API_BASE}/api/simulator/stream/${sessionId}?${params.toString()}`
+}
+
+// ─── Milestone 3: Replay Mode ──────────────────────────────────────
+
+export async function uploadReplayTranscript(sessionId: string, file: File): Promise<ReplayUploadResponse> {
+  const formData = new FormData()
+  formData.append('session_id', sessionId)
+  formData.append('file', file)
+
+  const res = await fetch(`${API_BASE}/api/replay/upload`, {
+    method: 'POST',
+    body: formData,
+  })
+
+  if (!res.ok) {
+    const body = await parseErrorBody(res)
+    throw new Error(`Failed to upload transcript. Status: ${res.status}. ${body}`)
+  }
+
+  return (await res.json()) as ReplayUploadResponse
+}
+
+export async function replayNext(sessionId: string): Promise<ReplayNextResponse> {
+  const formData = new FormData()
+  formData.append('session_id', sessionId)
+
+  const res = await fetch(`${API_BASE}/api/replay/next`, {
+    method: 'POST',
+    body: formData,
+  })
+
+  if (!res.ok) {
+    const body = await parseErrorBody(res)
+    throw new Error(`Failed to advance replay. Status: ${res.status}. ${body}`)
+  }
+
+  return (await res.json()) as ReplayNextResponse
 }
 
 export async function fetchHealth(): Promise<{ status: string; milestone: string }> {

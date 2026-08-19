@@ -10,6 +10,8 @@ import {
   startSimulator,
   getSession,
   conversationTurn,
+  uploadReplayTranscript as apiUploadReplayTranscript,
+  replayNext,
   type CreateSessionModeBackend,
   type SessionDetailResponse,
 } from '../services/api'
@@ -113,9 +115,14 @@ interface SessionState {
   latestEscalation: EscalationResult | null
   escalationHistory: EscalationHistoryEntry[]
   turnStatus: TurnStatus
-  // Incremented once per successful TURN_SUCCESS — NOT derived from messages.length
-  // (each turn appends 2 messages: agent + customer).
+  // Incremented once per successful TURN_SUCCESS / MANUAL_TURN_SUCCESS — NOT
+  // derived from messages.length (each Simulator turn appends 2 messages:
+  // agent + customer; Manual/Replay turns append only 1).
   turnCount: number
+  // ── Milestone 3: Replay mode step-through state ──
+  replayTotal: number
+  replayPosition: number
+  replayDone: boolean
 }
 
 const INITIAL_STATE: SessionState = {
@@ -134,6 +141,9 @@ const INITIAL_STATE: SessionState = {
   escalationHistory: [],
   turnStatus: 'idle',
   turnCount: 0,
+  replayTotal: 0,
+  replayPosition: 0,
+  replayDone: false,
 }
 
 // ─── Actions ──────────────────────────────────────────────────────
@@ -173,6 +183,39 @@ type SessionAction =
       }
     }
   | { type: 'TURN_ERROR'; message: string; failedTempId?: string }
+  // ── Milestone 3: Manual mode — one pasted customer message = one turn,
+  // no separate agent bubble is created (the agent's real reply happens in
+  // whatever external channel they're actually using).
+  | {
+      type: 'MANUAL_TURN_SUCCESS'
+      payload: {
+        customerMessage: string
+        turnIndex: number
+        intentSentiment: IntentSentimentResult | null
+        knowledge: KnowledgeResult | null
+        coaching: CoachingSuggestion | null
+        escalation: EscalationResult | null
+        frustrationLevel: number | null
+      }
+    }
+  // ── Milestone 3: Replay mode — transcript loaded / stepped through ──
+  | { type: 'REPLAY_LOADED'; total: number }
+  | {
+      type: 'REPLAY_STEP_SUCCESS'
+      payload: {
+        role: 'customer' | 'agent'
+        content: string
+        turnIndex: number
+        position: number
+        total: number
+        intentSentiment: IntentSentimentResult | null
+        knowledge: KnowledgeResult | null
+        coaching: CoachingSuggestion | null
+        escalation: EscalationResult | null
+        frustrationLevel: number | null
+      }
+    }
+  | { type: 'REPLAY_ERROR'; message: string }
   | { type: 'SESSION_ENDED' }
 
 function reducer(state: SessionState, action: SessionAction): SessionState {
@@ -320,6 +363,125 @@ case 'AGENT_MESSAGE_SENT':
       return { ...state, messages, turnStatus: 'error' }
     }
 
+    case 'MANUAL_TURN_SUCCESS': {
+      // Manual mode: one pasted customer message = one turn. No agent
+      // bubble is created here — the agent's real reply happens outside
+      // Clario (in whatever live channel they're actually supporting the
+      // customer through). Clario's job in this mode is purely to analyze
+      // the real customer message and surface coaching + escalation.
+      const {
+        customerMessage,
+        turnIndex,
+        intentSentiment,
+        knowledge,
+        coaching,
+        escalation,
+        frustrationLevel,
+      } = action.payload
+
+      const customerMsg: ChatMessage = {
+        role: 'customer',
+        content: customerMessage,
+        turnIndex,
+        intentSentiment,
+        knowledge,
+        frustrationLevel,
+      }
+
+      const historyEntry: EscalationHistoryEntry = escalation
+        ? { turnIndex, escalation, timestamp: new Date().toISOString() }
+        : {
+            turnIndex,
+            escalation: {
+              escalation_risk: 0,
+              risk_level: 'low',
+              reasoning: [],
+              alert_triggered: false,
+              score: 0,
+            },
+            timestamp: new Date().toISOString(),
+          }
+
+      return {
+        ...state,
+        messages: [...state.messages, customerMsg],
+        latestIntentSentiment: intentSentiment,
+        latestKnowledgeResults: knowledge,
+        latestCoachingSuggestion: coaching,
+        latestEscalation: escalation,
+        escalationHistory: [...state.escalationHistory, historyEntry],
+        turnStatus: 'idle',
+        turnCount: state.turnCount + 1,
+      }
+    }
+
+    case 'REPLAY_LOADED':
+      return {
+        ...state,
+        replayTotal: action.total,
+        replayPosition: 0,
+        replayDone: false,
+      }
+
+    case 'REPLAY_STEP_SUCCESS': {
+      const {
+        role,
+        content,
+        turnIndex,
+        position,
+        total,
+        intentSentiment,
+        knowledge,
+        coaching,
+        escalation,
+        frustrationLevel,
+      } = action.payload
+
+      // Nothing left to step through — just refresh position/done state.
+      if (!content) {
+        return {
+          ...state,
+          replayPosition: position,
+          replayTotal: total,
+          replayDone: position >= total,
+          turnStatus: 'idle',
+        }
+      }
+
+      const newMsg: ChatMessage = {
+        role,
+        content,
+        turnIndex,
+        intentSentiment,
+        knowledge,
+        frustrationLevel,
+      }
+
+      const historyEntry: EscalationHistoryEntry | null =
+        role === 'customer' && escalation
+          ? { turnIndex, escalation, timestamp: new Date().toISOString() }
+          : null
+
+      return {
+        ...state,
+        messages: [...state.messages, newMsg],
+        latestIntentSentiment: intentSentiment ?? state.latestIntentSentiment,
+        latestKnowledgeResults: knowledge ?? state.latestKnowledgeResults,
+        latestCoachingSuggestion: coaching ?? state.latestCoachingSuggestion,
+        latestEscalation: escalation ?? state.latestEscalation,
+        escalationHistory: historyEntry
+          ? [...state.escalationHistory, historyEntry]
+          : state.escalationHistory,
+        replayPosition: position,
+        replayTotal: total,
+        replayDone: position >= total,
+        turnStatus: 'idle',
+      }
+    }
+
+    case 'REPLAY_ERROR':
+      return { ...state, turnStatus: 'error' }
+
     case 'SESSION_ENDED':
       return { ...INITIAL_STATE }
 
@@ -333,11 +495,45 @@ case 'AGENT_MESSAGE_SENT':
 export interface SessionContextValue extends SessionState {
   startSession: (config: SessionConfig) => Promise<void>
   submitTurn: (message: string) => Promise<void>
+  // Milestone 3: Manual mode — submit a pasted REAL customer message.
+  submitManualMessage: (customerMessage: string) => Promise<void>
+  // Milestone 3: Replay mode — upload a transcript, then step through it.
+  uploadReplayTranscript: (file: File) => Promise<void>
+  advanceReplay: () => Promise<void>
   endSession: () => void
   loadExistingSession: (sessionId: string) => Promise<void>
 }
 
 const SessionContext = createContext<SessionContextValue | undefined>(undefined)
+
+// ─── Helpers ──────────────────────────────────────────────────────
+
+function mapCoaching(raw: any): CoachingSuggestion | null {
+  if (!raw) return null
+  const coachingTips = raw.coaching_tips?.length
+    ? raw.coaching_tips
+    : (raw.communication_tips ?? [])
+  return {
+    coaching_tips: coachingTips,
+    suggested_response: raw.suggested_response ?? '',
+    tone_feedback: raw.tone_feedback,
+    communication_tips: raw.communication_tips,
+    confidence: raw.confidence,
+  }
+}
+
+function mapEscalation(raw: any): EscalationResult | null {
+  if (!raw) return null
+  const riskValue = typeof raw.escalation_risk === 'number' ? raw.escalation_risk : 0
+  return {
+    escalation_risk: riskValue,
+    risk_level: raw.risk_level ?? 'low',
+    reasoning: raw.reasoning ?? [],
+    recommended_action: raw.recommended_action,
+    alert_triggered: raw.alert_triggered ?? (raw.risk_level === 'high'),
+    score: riskValue,
+  }
+}
 
 // ─── Provider ─────────────────────────────────────────────────────
 
@@ -348,7 +544,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     return {
       ...state,
 
-      // ── startSession: create a new session + start simulator ──
+      // ── startSession: create a new session + (Simulator only) start the simulator ──
       async startSession(config: SessionConfig) {
         try {
           // 1. Create the session
@@ -360,28 +556,40 @@ export function SessionProvider({ children }: { children: ReactNode }) {
           })
           const sessionId = sessionResult.session_id
 
-          // 2. Start the simulator and get the first customer message
-          const simResult = await startSimulator({
-            session_id: sessionId,
-            mode: config.mode,
-            product_context: config.product_context,
-            scenario: config.scenario,
-            persona: config.persona,
-          })
+          let threadId = ''
+          let firstMessages: ChatMessage[] = []
 
-          const firstMsg = simResult.messages[0]
-          const firstMessages: ChatMessage[] = firstMsg
-            ? [{
-                role: 'customer',
-                content: firstMsg.content,
-                turnIndex: firstMsg.turn_index,
-              }]
-            : []
+          if (config.mode === 'Simulator') {
+            // 2. Start the simulator and get the first customer message.
+            // Manual/Replay modes never call this — there is no AI-generated
+            // welcome message in either: Manual starts empty until the agent
+            // pastes the first real customer message; Replay starts empty
+            // until a transcript is uploaded and stepped through.
+            const simResult = await startSimulator({
+              session_id: sessionId,
+              mode: config.mode,
+              product_context: config.product_context,
+              scenario: config.scenario,
+              persona: config.persona,
+            })
+            threadId = simResult.thread_id
+
+            const firstMsg = simResult.messages[0]
+            firstMessages = firstMsg
+              ? [{
+                  role: 'customer',
+                  content: firstMsg.content,
+                  turnIndex: firstMsg.turn_index,
+                }]
+              : []
+          } else {
+            threadId = `local-${Date.now()}`
+          }
 
           dispatch({
             type: 'SESSION_STARTED',
-            sessionId: simResult.session_id,
-            threadId: simResult.thread_id,
+            sessionId,
+            threadId,
             mode: config.mode,
             productContext: config.product_context,
             scenario: config.scenario,
@@ -395,7 +603,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         }
       },
 
-      // ── submitTurn: single full-pipeline call per turn ──
+      // ── submitTurn: single full-pipeline call per turn (Simulator mode) ──
       async submitTurn(message: string) {
         if (!state.isSessionActive || !state.sessionId) {
           console.warn('[SessionContext] submitTurn ignored — no active session (isSessionActive=false)')
@@ -464,44 +672,6 @@ const trimmed = message.trim()
           const customerTurnIndex =
             res.turn_index ?? customerSim.turn_index ?? state.turnCount + 1
 
-          // Convert coaching. The pipeline returns { coaching_tips,
-          // suggested_response, tone_feedback, communication_tips, confidence }.
-          // Prefer coaching_tips, but fall back to communication_tips so the
-          // coaching panel always has content regardless of which key the
-          // backend produced.
-          const rawCoaching = res.coaching as (CoachingSuggestion & { coaching_tips?: string[] }) | null
-          const coachingTips =
-            rawCoaching?.coaching_tips?.length
-              ? rawCoaching.coaching_tips
-              : (rawCoaching?.communication_tips ?? [])
-
-          const coaching: CoachingSuggestion | null = res.coaching
-            ? {
-                coaching_tips: coachingTips,
-                suggested_response: res.coaching.suggested_response ?? '',
-                tone_feedback: res.coaching.tone_feedback,
-                communication_tips: res.coaching.communication_tips,
-                confidence: res.coaching.confidence,
-              }
-            : null
-
-          // Convert escalation (pipeline returns { escalation_risk, risk_level,
-          // reasoning, recommended_action, alert_triggered }).
-          const escalation: EscalationResult | null = res.escalation
-            ? {
-                escalation_risk: typeof res.escalation.escalation_risk === 'number'
-                  ? res.escalation.escalation_risk
-                  : 0,
-                risk_level: res.escalation.risk_level ?? 'low',
-                reasoning: res.escalation.reasoning ?? [],
-                recommended_action: res.escalation.recommended_action,
-                alert_triggered: res.escalation.alert_triggered ?? (res.escalation.risk_level === 'high'),
-                score: typeof res.escalation.escalation_risk === 'number'
-                  ? res.escalation.escalation_risk
-                  : 0,
-              }
-            : null
-
           dispatch({
             type: 'TURN_SUCCESS',
 payload: {
@@ -511,8 +681,8 @@ payload: {
               customerTurnIndex,
               intentSentiment: res.intent_sentiment ?? null,
               knowledge: res.knowledge ?? null,
-              coaching,
-              escalation,
+              coaching: mapCoaching(res.coaching),
+              escalation: mapEscalation(res.escalation),
               frustrationLevel: customerSim.internal_frustration_level ?? null,
             },
           })
@@ -520,6 +690,110 @@ payload: {
 const msg = err instanceof Error ? err.message : 'Conversation turn failed'
           dispatch({ type: 'TURN_ERROR', message: msg, failedTempId: tempId })
           // Re-throw so the page can optionally surface it; context also holds turnStatus "error".
+          throw new Error(msg)
+        }
+      },
+
+      // ── submitManualMessage: Manual mode — one pasted REAL customer
+      // message = one turn. Reuses conversationTurn() with mode="Manual";
+      // the backend persists this text as role="customer" (not "agent")
+      // and runs the same coaching pipeline on it. ──
+      async submitManualMessage(customerMessage: string) {
+        if (!state.isSessionActive || !state.sessionId) {
+          console.warn('[SessionContext] submitManualMessage ignored — no active session')
+          return
+        }
+
+        const trimmed = customerMessage.trim()
+        if (!trimmed) {
+          console.warn('[SessionContext] submitManualMessage ignored — empty message')
+          return
+        }
+
+        dispatch({ type: 'TURN_PENDING' })
+
+        try {
+          const res = await conversationTurn({
+            session_id: state.sessionId,
+            mode: 'Manual',
+            product_context: state.productContext,
+            scenario: state.scenario,
+            persona: state.persona,
+            user_message: trimmed,
+            turn_index: state.turnCount,
+          })
+
+          const customerSim = res.customer_simulation ?? {}
+          const turnIndex = res.turn_index ?? customerSim.turn_index ?? state.turnCount
+
+          dispatch({
+            type: 'MANUAL_TURN_SUCCESS',
+            payload: {
+              customerMessage: customerSim.customer_message || trimmed,
+              turnIndex,
+              intentSentiment: res.intent_sentiment ?? null,
+              knowledge: res.knowledge ?? null,
+              coaching: mapCoaching(res.coaching),
+              escalation: mapEscalation(res.escalation),
+              frustrationLevel: customerSim.internal_frustration_level ?? null,
+            },
+          })
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : 'Manual turn failed'
+          dispatch({ type: 'TURN_ERROR', message: msg })
+          throw new Error(msg)
+        }
+      },
+
+      // ── uploadReplayTranscript: Replay mode — parse + store a transcript
+      // against the active session, resetting the step position to 0. ──
+      async uploadReplayTranscript(file: File) {
+        if (!state.sessionId) {
+          console.warn('[SessionContext] uploadReplayTranscript ignored — no active session')
+          return
+        }
+        try {
+          const res = await apiUploadReplayTranscript(state.sessionId, file)
+          dispatch({ type: 'REPLAY_LOADED', total: res.total_turns })
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : 'Failed to upload transcript'
+          dispatch({ type: 'REPLAY_ERROR', message: msg })
+          throw new Error(msg)
+        }
+      },
+
+      // ── advanceReplay: Replay mode — step to the next line in the
+      // uploaded transcript. Customer lines run the full coaching pipeline;
+      // agent lines are just replayed as context. ──
+      async advanceReplay() {
+        if (!state.sessionId) {
+          console.warn('[SessionContext] advanceReplay ignored — no active session')
+          return
+        }
+
+        dispatch({ type: 'TURN_PENDING' })
+
+        try {
+          const res = await replayNext(state.sessionId)
+
+          dispatch({
+            type: 'REPLAY_STEP_SUCCESS',
+            payload: {
+              role: res.role ?? 'customer',
+              content: res.content ?? '',
+              turnIndex: res.turn_index,
+              position: res.position,
+              total: res.total_turns,
+              intentSentiment: res.intent_sentiment ?? null,
+              knowledge: res.knowledge ?? null,
+              coaching: mapCoaching(res.coaching),
+              escalation: mapEscalation(res.escalation),
+              frustrationLevel: res.customer_simulation?.internal_frustration_level ?? null,
+            },
+          })
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : 'Failed to advance replay'
+          dispatch({ type: 'REPLAY_ERROR', message: msg })
           throw new Error(msg)
         }
       },
@@ -538,27 +812,35 @@ const msg = err instanceof Error ? err.message : 'Conversation turn failed'
         try {
           const sessionDetail: SessionDetailResponse = await getSession(sessionId.trim())
 
-          const simResult = await startSimulator({
-            session_id: sessionDetail.session_id,
-            mode: sessionDetail.mode,
-            product_context: sessionDetail.product_context,
-            scenario: sessionDetail.scenario,
-            persona: sessionDetail.persona,
-          })
+          let threadId = ''
+          let firstMessages: ChatMessage[] = []
 
-          const firstMsg = simResult.messages[0]
-          const firstMessages: ChatMessage[] = firstMsg
-            ? [{
-                role: 'customer',
-                content: firstMsg.content,
-                turnIndex: firstMsg.turn_index,
-              }]
-            : []
+          if (sessionDetail.mode === 'Simulator') {
+            const simResult = await startSimulator({
+              session_id: sessionDetail.session_id,
+              mode: sessionDetail.mode,
+              product_context: sessionDetail.product_context,
+              scenario: sessionDetail.scenario,
+              persona: sessionDetail.persona,
+            })
+            threadId = simResult.thread_id
+
+            const firstMsg = simResult.messages[0]
+            firstMessages = firstMsg
+              ? [{
+                  role: 'customer',
+                  content: firstMsg.content,
+                  turnIndex: firstMsg.turn_index,
+                }]
+              : []
+          } else {
+            threadId = `local-${Date.now()}`
+          }
 
           dispatch({
             type: 'SESSION_STARTED',
-            sessionId: simResult.session_id,
-            threadId: simResult.thread_id,
+            sessionId: sessionDetail.session_id,
+            threadId,
             mode: sessionDetail.mode,
             productContext: sessionDetail.product_context,
             scenario: sessionDetail.scenario,

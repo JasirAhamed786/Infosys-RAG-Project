@@ -1,16 +1,30 @@
 """
 pipeline.py
 
-LangGraph orchestration pipeline — Milestone 2 real implementation.
+LangGraph orchestration pipeline — Milestone 2 real implementation,
+now extended for Milestone 3 Manual + Replay mode support.
 
 Staged flow:
-- Stage 1: Intent & Sentiment Analysis always runs FIRST (every turn)g
+- Stage 1: Intent & Sentiment Analysis always runs FIRST (every turn)
 - Stage 2: Knowledge Recommendation runs conditionally when intent
   suggests the customer needs information
-- Stage 3: Customer Simulator runs in Simulator Mode
+- Stage 3: Customer Simulator runs in Simulator Mode ONLY
 - Stage 4: Coaching & Response Suggestion (real Gemini agent, every turn)
 - Stage 5: Escalation Risk Monitor (real Gemini agent, every turn)
 - Stage 6: Summary remains a mock stub (Milestone 4)
+
+Manual / Replay mode support:
+  In these two modes, the "customer message" doesn't come from the
+  Simulator Agent — in Manual mode the agent pastes it in, in Replay mode
+  it comes from an uploaded transcript. Either way, the caller (see
+  conversation.py / replay.py) persists that text as a role="customer"
+  message BEFORE calling this pipeline, so customer_message_to_analyze
+  (extracted below from conversation_history) already holds the right
+  text. The only change needed here is surfacing that same text back out
+  through customer_simulation.customer_message, so the frontend's existing
+  contract (which always reads customer_simulation.customer_message from
+  the pipeline response) keeps working identically across all three modes
+  without any special-casing on the client.
 
 Includes:
 - Retry-with-backoff for 429 rate limit errors
@@ -162,6 +176,24 @@ def run_pipeline(
         wave1_futs = {key: executor.submit(fn) for key, fn in wave1.items()}
         intent_sentiment = wave1_futs["intent"].result()
         customer_simulation = wave1_futs["simulator"].result()
+
+    # ============================================================
+    # Manual / Replay: surface the externally-supplied customer message
+    # through customer_simulation.customer_message so the frontend's
+    # existing contract keeps working unchanged across all three modes.
+    # See module docstring for the full explanation.
+    # ============================================================
+    if mode in ("Manual", "Replay") and customer_message_to_analyze:
+        customer_simulation = {
+            **customer_simulation,
+            "customer_message": customer_message_to_analyze,
+            "turn_index": turn_index,
+            "internal_frustration_level": intent_sentiment.get(
+                "frustration_score",
+                customer_simulation.get("internal_frustration_level", 35),
+            ),
+            "note": f"{mode} mode — message supplied externally, not simulator-generated",
+        }
 
     # ============================================================
     # Determine whether to query the knowledge base

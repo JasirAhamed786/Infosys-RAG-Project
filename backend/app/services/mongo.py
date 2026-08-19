@@ -18,6 +18,9 @@ class MongoService:
         self.messages = None
         self.reports = None
         self.knowledge_docs = None
+        # Milestone 3 — Replay mode: stores the parsed transcript + current
+        # step position per session_id (see backend/app/routers/replay.py).
+        self.replay_transcripts = None
 
     def connect(self):
         if self.client is None:
@@ -30,6 +33,7 @@ class MongoService:
             self.messages = self.db["messages"]
             self.reports = self.db["reports"]
             self.knowledge_docs = self.db["knowledge_docs"]
+            self.replay_transcripts = self.db["replay_transcripts"]
 
             # Clearly log WHICH database + collection stores sessions so the user
             # can find them in MongoDB Compass (they may otherwise be looking at a
@@ -57,4 +61,3 @@ class MongoService:
 
 
 mongo = MongoService()
-

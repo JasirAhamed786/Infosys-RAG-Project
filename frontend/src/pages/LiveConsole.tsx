@@ -31,13 +31,20 @@ export default function LiveConsole() {
     isSessionActive,
     sessionId,
     threadId,
+    sessionMode: activeMode,
     messages,
     latestIntentSentiment,
     latestKnowledgeResults,
     latestCoachingSuggestion,
     turnStatus,
+    replayTotal,
+    replayPosition,
+    replayDone,
     startSession,
     submitTurn,
+    submitManualMessage,
+    uploadReplayTranscript,
+    advanceReplay,
     endSession,
     loadExistingSession,
   } = useSession()
@@ -57,8 +64,13 @@ export default function LiveConsole() {
   // Existing session loading
   const [existingSessionId, setExistingSessionId] = useState('')
 
-  // Reply input box (page-local, deliberately not in context)
+  // Reply input box (page-local, deliberately not in context).
+  // Doubles as the Manual-mode "paste customer message" box.
   const [agentInput, setAgentInput] = useState('')
+
+  // ── Milestone 3: Replay mode local UI state ──
+  const [replayFile, setReplayFile] = useState<File | null>(null)
+  const [replayUploading, setReplayUploading] = useState(false)
 
 // Client-side typewriter over the complete customer message (not backend streaming)
   const typingRef = useRef<number | null>(null)
@@ -200,7 +212,7 @@ const messagesEndRef = useRef<HTMLDivElement>(null)
     }
   }
 
-  // ─── Send Agent Message ──
+  // ─── Send Agent Message (Simulator mode) ──
   async function handleSendMessage(e?: React.FormEvent) {
     e?.preventDefault()
     if (!agentInput.trim() || !isSessionActive || turnStatus === 'pending') return
@@ -210,6 +222,48 @@ const messagesEndRef = useRef<HTMLDivElement>(null)
 
     try {
       await submitTurn(agentMsg)
+    } catch {
+      // turnStatus is now "error" in context; the inline error banner will render.
+    }
+  }
+
+  // ─── Send pasted customer message (Manual mode) ──
+  async function handleSendManualMessage(e?: React.FormEvent) {
+    e?.preventDefault()
+    if (!agentInput.trim() || !isSessionActive || turnStatus === 'pending') return
+
+    const customerMsg = agentInput.trim()
+    setAgentInput('')
+
+    try {
+      await submitManualMessage(customerMsg)
+    } catch {
+      // turnStatus is now "error" in context; the inline error banner will render.
+    }
+  }
+
+  // ─── Upload transcript (Replay mode) ──
+  async function handleUploadReplay(e: React.FormEvent) {
+    e.preventDefault()
+    if (!replayFile) return
+
+    setReplayUploading(true)
+    setError(null)
+
+    try {
+      await uploadReplayTranscript(replayFile)
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Failed to upload transcript'
+      setError(msg)
+    } finally {
+      setReplayUploading(false)
+    }
+  }
+
+  // ─── Step to next turn (Replay mode) ──
+  async function handleAdvanceReplay() {
+    try {
+      await advanceReplay()
     } catch {
       // turnStatus is now "error" in context; the inline error banner will render.
     }
@@ -233,7 +287,7 @@ const messagesEndRef = useRef<HTMLDivElement>(null)
             </h1>
             <p className="mt-1 text-sm text-[#9DB7CF] max-w-3xl">
               {isSessionActive
-                ? `Simulator Mode • Session ID: ${(sessionId ?? '').slice(0, 8)}... • Thread ID: ${(threadId ?? '').slice(0, 8)}...`
+                ? `${activeMode ?? 'Simulator'} Mode • Session ID: ${(sessionId ?? '').slice(0, 8)}... • Thread ID: ${(threadId ?? '').slice(0, 8)}...`
                 : 'Configure a session to start simulating real customer support interactions and testing the AI RAG pipeline.'}
             </p>
           </div>
@@ -308,6 +362,18 @@ const messagesEndRef = useRef<HTMLDivElement>(null)
                     <option value="Manual">Manual — You Play Both Roles</option>
                     <option value="Replay">Replay — Review Past Sessions</option>
                   </select>
+                  {mode === 'Manual' && (
+                    <p className="text-xs text-[#667085] mt-2">
+                      Paste real customer messages as they arrive elsewhere — Clario analyzes each
+                      one and coaches you in real time. No AI-generated customer is involved.
+                    </p>
+                  )}
+                  {mode === 'Replay' && (
+                    <p className="text-xs text-[#667085] mt-2">
+                      Upload a past support transcript after starting the session, then step through
+                      it turn by turn to review how it was handled.
+                    </p>
+                  )}
                 </div>
 
                 <div>
@@ -365,7 +431,7 @@ className="w-full inline-flex items-center justify-center rounded-lg brand-grad 
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                     </svg>
-                    Initializing AI Simulator...
+                    {mode === 'Simulator' ? 'Initializing AI Simulator...' : 'Creating Session...'}
                   </>
                 ) : (
                   <>
@@ -373,7 +439,7 @@ className="w-full inline-flex items-center justify-center rounded-lg brand-grad 
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
-                    Start Simulation
+                    {mode === 'Simulator' ? 'Start Simulation' : mode === 'Manual' ? 'Start Manual Session' : 'Start Replay Session'}
                   </>
                 )}
               </button>
@@ -456,7 +522,7 @@ className="w-full inline-flex items-center justify-center rounded-lg brand-grad 
               <div>
                 <h4 className="text-sm font-semibold text-[#F04438]">This turn failed to process</h4>
                 <p className="text-sm text-[#F04438]/90 mt-1 leading-relaxed">
-                  The conversation could not be analyzed. Please try sending your reply again.
+                  The conversation could not be analyzed. Please try again.
                 </p>
               </div>
             </div>
@@ -476,7 +542,11 @@ className="w-full inline-flex items-center justify-center rounded-lg brand-grad 
                   </div>
                   <div>
                     <h2 className="font-semibold text-[#101828] text-sm">Customer Interaction</h2>
-                    <p className="text-[11px] text-[#667085] mt-0.5">Turn {messages.filter(m => m.role !== 'system').length} Tracker</p>
+                    <p className="text-[11px] text-[#667085] mt-0.5">
+                      {activeMode === 'Replay'
+                        ? `Turn ${Math.min(replayPosition, replayTotal)} of ${replayTotal || 0}`
+                        : `Turn ${messages.filter(m => m.role !== 'system').length} Tracker`}
+                    </p>
                   </div>
                 </div>
                 {turnStatus === 'pending' && (
@@ -501,8 +571,20 @@ className="w-full inline-flex items-center justify-center rounded-lg brand-grad 
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                         </svg>
                       </div>
-                      <p className="text-sm font-medium text-[#667085]">Awaiting interaction</p>
-                      <p className="text-xs text-[#98A2B3] mt-1">Type a response below to start.</p>
+                      <p className="text-sm font-medium text-[#667085]">
+                        {activeMode === 'Manual'
+                          ? 'Awaiting a pasted customer message'
+                          : activeMode === 'Replay'
+                          ? 'Upload a transcript to begin'
+                          : 'Awaiting interaction'}
+                      </p>
+                      <p className="text-xs text-[#98A2B3] mt-1">
+                        {activeMode === 'Manual'
+                          ? 'Paste what the customer said below to start.'
+                          : activeMode === 'Replay'
+                          ? 'Use the upload control below the chat.'
+                          : 'Type a response below to start.'}
+                      </p>
                     </div>
                   </div>
                 )}
@@ -543,32 +625,72 @@ className="w-full inline-flex items-center justify-center rounded-lg brand-grad 
                 <div ref={messagesEndRef} />
               </div>
 
-              {/* Agent Input Bar */}
+              {/* Agent Input Bar — mode-aware (Simulator / Manual / Replay) */}
               <div className="shrink-0 border-t border-[#E4E7EC] p-4 bg-white">
-                <form onSubmit={handleSendMessage} className="flex gap-3">
-                  <input
-                    type="text"
-                    value={agentInput}
-                    onChange={(e) => setAgentInput(e.target.value)}
-                    placeholder="Reply to customer..."
-                    className="flex-1 rounded-lg border border-[#D0D5DD] px-4 py-3 text-sm text-[#101828] placeholder-[#98A2B3] bg-white focus:border-[#0E2B6C] focus:outline-none focus:ring-2 focus:ring-[#0E2B6C]/20 transition-colors disabled:bg-[#F2F4F7]"
-                    disabled={turnStatus === 'pending' || isTyping}
-                  />
-                  <button
-                    type="submit"
-                    disabled={!agentInput.trim() || turnStatus === 'pending' || isTyping}
-                    className="inline-flex items-center justify-center rounded-lg brand-grad px-6 py-3 text-sm font-medium text-white hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-[#0E7490]/40 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
-                  >
-                    {turnStatus === 'pending' ? (
-                      <svg className="animate-spin h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                      </svg>
-) : (
-                      <Send className="h-5 w-5" />
+                {activeMode === 'Replay' ? (
+                  <div className="space-y-3">
+                    {replayTotal === 0 ? (
+                      <form onSubmit={handleUploadReplay} className="flex gap-3 items-center">
+                        <input
+                          type="file"
+                          accept=".txt"
+                          onChange={(e) => setReplayFile(e.target.files?.[0] ?? null)}
+                          className="flex-1 text-sm text-[#101828] file:mr-3 file:rounded-lg file:border-0 file:bg-[#E9EDF6] file:px-3 file:py-2 file:text-xs file:font-medium file:text-[#0E2B6C]"
+                        />
+                        <button
+                          type="submit"
+                          disabled={!replayFile || replayUploading}
+                          className="inline-flex items-center justify-center rounded-lg brand-grad px-5 py-3 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
+                        >
+                          {replayUploading ? 'Uploading…' : 'Upload Transcript'}
+                        </button>
+                      </form>
+                    ) : (
+                      <div className="flex items-center justify-between gap-4">
+                        <p className="text-xs text-[#667085]">
+                          Turn {Math.min(replayPosition, replayTotal)} of {replayTotal}
+                          {replayDone && ' — transcript complete'}
+                        </p>
+                        <button
+                          type="button"
+                          onClick={handleAdvanceReplay}
+                          disabled={turnStatus === 'pending' || replayDone}
+                          className="inline-flex items-center justify-center rounded-lg brand-grad px-6 py-3 text-sm font-medium text-white hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-[#0E7490]/40 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
+                        >
+                          {turnStatus === 'pending' ? 'Analyzing…' : replayDone ? 'Transcript Complete' : 'Next Turn →'}
+                        </button>
+                      </div>
                     )}
-                  </button>
-                </form>
+                  </div>
+                ) : (
+                  <form
+                    onSubmit={activeMode === 'Manual' ? handleSendManualMessage : handleSendMessage}
+                    className="flex gap-3"
+                  >
+                    <input
+                      type="text"
+                      value={agentInput}
+                      onChange={(e) => setAgentInput(e.target.value)}
+                      placeholder={activeMode === 'Manual' ? "Paste the customer's message here..." : 'Reply to customer...'}
+                      className="flex-1 rounded-lg border border-[#D0D5DD] px-4 py-3 text-sm text-[#101828] placeholder-[#98A2B3] bg-white focus:border-[#0E2B6C] focus:outline-none focus:ring-2 focus:ring-[#0E2B6C]/20 transition-colors disabled:bg-[#F2F4F7]"
+                      disabled={turnStatus === 'pending' || isTyping}
+                    />
+                    <button
+                      type="submit"
+                      disabled={!agentInput.trim() || turnStatus === 'pending' || isTyping}
+                      className="inline-flex items-center justify-center rounded-lg brand-grad px-6 py-3 text-sm font-medium text-white hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-[#0E7490]/40 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
+                    >
+                      {turnStatus === 'pending' ? (
+                        <svg className="animate-spin h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                        </svg>
+) : (
+                        <Send className="h-5 w-5" />
+                      )}
+                    </button>
+                  </form>
+                )}
               </div>
             </div>
 
@@ -757,17 +879,19 @@ className="w-full inline-flex items-center justify-center rounded-lg brand-grad 
                       <div className="w-full rounded-lg bg-white border border-[#E4E7EC] p-4 text-left">
                         <div className="text-[10px] font-semibold uppercase tracking-wider text-[#667085] mb-1">Suggested Response</div>
                         <p className="text-[13px] text-[#101828] leading-relaxed">{latestCoachingSuggestion.suggested_response}</p>
-                        <button
-                          type="button"
-                          onClick={() => setAgentInput(latestCoachingSuggestion.suggested_response ?? '')}
-                          disabled={turnStatus === 'pending' || isTyping}
-                          className="mt-3 inline-flex items-center gap-1.5 rounded-lg brand-grad px-3 py-1.5 text-xs font-medium text-white hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-[#0E7490]/40 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
-                        >
-                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
-                          </svg>
-                          Use this reply
-                        </button>
+                        {activeMode !== 'Replay' && (
+                          <button
+                            type="button"
+                            onClick={() => setAgentInput(latestCoachingSuggestion.suggested_response ?? '')}
+                            disabled={turnStatus === 'pending' || isTyping}
+                            className="mt-3 inline-flex items-center gap-1.5 rounded-lg brand-grad px-3 py-1.5 text-xs font-medium text-white hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-[#0E7490]/40 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
+                          >
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+                            </svg>
+                            {activeMode === 'Manual' ? 'Copy for your reply' : 'Use this reply'}
+                          </button>
+                        )}
                       </div>
                     )}
                   </>
