@@ -20,13 +20,13 @@ class Settings(BaseSettings):
     CHROMA_COLLECTION_NAME: str = "clario_knowledge_base"
 
     # Groq models
-    GROQ_SIMULATOR_MODEL: str = "llama-3.3-70b-versatile"
+    GROQ_SIMULATOR_MODEL: str = "openai/gpt-oss-120b"
     
     # <-- Set this back to the 70B model that successfully passed your debug test!
-    GROQ_INTENT_MODEL: str = "llama-3.3-70b-versatile"
+    GROQ_INTENT_MODEL: str = "openai/gpt-oss-120b"
 
     # Groq model for the Coaching & Response Suggestion agent
-    GROQ_COACHING_MODEL: str = "llama-3.3-70b-versatile"
+    GROQ_COACHING_MODEL: str = "openai/gpt-oss-120b"
 
     # Gemini model (using stable release)
     GEMINI_KNOWLEDGE_MODEL: str = "gemini-3.5-flash-lite"

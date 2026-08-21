@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
 
-app = FastAPI(title="AI Customer Support Coaching Assistant - Backend (Milestone 3)")
+app = FastAPI(title="AI Customer Support Coaching Assistant - Backend (Milestone 4)")
 
 app.add_middleware(
     CORSMiddleware,
@@ -16,7 +16,7 @@ app.add_middleware(
 
 @app.get("/api/health")
 def health():
-    return {"status": "ok", "milestone": "3"}
+    return {"status": "ok", "milestone": "4"}
 
 
 @app.on_event("startup")
@@ -65,19 +65,22 @@ app.include_router(coaching_router, prefix="/api")
 app.include_router(escalation_router, prefix="/api")
 app.include_router(replay_router.router, prefix="/api")
 
-# Milestone 4 scaffolding routes (stubs — will be replaced later)
+# Milestone 4 routers — Analytics and Post-Interaction Reports
 from app.routers.reports import router as reports_router
 from app.routers.analytics import router as analytics_router
 
-app.include_router(reports_router, prefix="/api")
-app.include_router(analytics_router, prefix="/api")
+# Note: The reports and analytics router files provided earlier already 
+# include the "/api/reports" and "/api/analytics" prefixes internally,
+# so we do not need to add the prefix="/api" here again.
+app.include_router(reports_router)
+app.include_router(analytics_router)
 
 
 @app.get("/")
 def root():
     return {
         "app": "Clario - AI Customer Support Coaching Assistant",
-        "milestone": "3",
+        "milestone": "4",
         "features": [
             "Session Configuration — Simulator, Manual, and Replay modes",
             "Knowledge Base Upload + RAG (shared ChromaDB collection)",
@@ -90,5 +93,7 @@ def root():
             "Manual Mode — paste real customer messages for live coaching",
             "Replay Mode — upload + step through a past transcript",
             "Live Console with persistent session state across navigation",
+            "Post-Interaction Summary Agent — automated debriefs & scoring",
+            "Performance Analytics Module — aggregate telemetry & trends"
         ],
     }
