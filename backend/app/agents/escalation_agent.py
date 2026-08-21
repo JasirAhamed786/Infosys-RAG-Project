@@ -1,26 +1,10 @@
-"""escalation_agent.py
+"""
+escalation_agent.py
 
-Escalation Risk Monitor Agent (Gemini)
+Escalation Risk Monitor Agent (Groq)
 
-Replaces the Milestone 3 stub with a real LLM implementation.
-
-Behavior:
-- Runs EVERY turn.
-- Uses Gemini to assess whether the current customer interaction warrants
-  escalation based on:
-    - intent category
-    - sentiment severity / frustration score
-    - conversation stage/turn index
-    - unresolved-issue indicators (e.g. repeated requests, high frustration)
-- Outputs strict JSON:
-    - escalation_risk: number 0-100
-    - risk_level: "low" | "medium" | "high"
-    - reasoning: array of short reasons
-    - recommended_action: a short suggested action
-    - alert_triggered: true when risk_level == "high"
-- Falls back to a safe result ONLY on a real API error.
-
-Output label: "escalation_risk"
+Assesses whether the current customer interaction warrants escalation based on
+intent, sentiment, frustration, and conversation stage.
 """
 
 from __future__ import annotations
@@ -28,11 +12,6 @@ from __future__ import annotations
 from typing import Any
 
 from app.core.config import settings
-
-# The escalation agent previously used the Gemini client with
-# GEMINI_KNOWLEDGE_MODEL, which was not a valid/stable Gemini model name and
-# caused constant fallbacks (escalation never "worked continuously"). Groq
-# is reliably configured with a valid model, so we use Groq here instead.
 from app.utils.llm_client import groq_client
 
 # Strict JSON-only system prompt to enforce the structured escalation output.
@@ -40,7 +19,9 @@ ESCALATION_SYSTEM_PROMPT = """You are an Escalation Risk Monitor agent for an AI
 
 Your job: Given the customer's message, detected intent, emotional state, frustration score, and turn index, determine whether this interaction should be escalated.
 
-Output STRICT JSON ONLY — no other text.
+CRITICAL INSTRUCTION: You must output STRICTLY valid JSON only. 
+Do NOT wrap your response in markdown blocks (e.g., do not use ```json).
+Do NOT include any conversational text before or after the JSON.
 
 Rules:
 1. escalation_risk: A number 0.0 to 1.0. Higher means more likely escalation is warranted.
@@ -49,13 +30,13 @@ Rules:
 4. recommended_action: A short, actionable next step for the agent/supervisor.
 5. alert_triggered: true if risk_level == "high", otherwise false.
 
-Output format (EXACTLY this JSON, no other text):
+Output format (EXACTLY this JSON schema):
 {
-  "escalation_risk": number,
-  "risk_level": "low" | "medium" | "high",
+  "escalation_risk": 0.0,
+  "risk_level": "string",
   "reasoning": ["string"],
   "recommended_action": "string",
-  "alert_triggered": boolean
+  "alert_triggered": false
 }"""
 
 
@@ -74,8 +55,6 @@ def run_escalation_agent(
 
     Returns a dict with keys: agent, turn_index, escalation_risk (0-100),
     risk_level, reasoning, recommended_action, alert_triggered.
-
-    On a real API error, returns a safe fallback so the pipeline never crashes.
     """
     conversation_state = conversation_state or {}
 
@@ -117,7 +96,7 @@ Assess escalation risk. Output STRICT JSON ONLY."""
             system_prompt=ESCALATION_SYSTEM_PROMPT,
             user_prompt=user_prompt,
             temperature=0.2,
-            max_tokens=512,
+            max_tokens=1024,  # Increased to prevent token cutoffs
         )
 
         if isinstance(gres, dict) and "error" in gres:
@@ -131,8 +110,7 @@ Assess escalation risk. Output STRICT JSON ONLY."""
         risk = max(0.0, min(1.0, risk))
 
         # Derive risk_level from the numeric score server-side rather than
-        # trusting the LLM's risk_level string blindly. This guarantees the
-        # displayed score and the risk_level label always agree (Bug 1).
+        # trusting the LLM's risk_level string blindly.
         risk_level = "high" if risk >= 0.75 else ("medium" if risk >= 0.45 else "low")
 
         raw_reasons = gres.get("reasoning", [])
@@ -143,9 +121,7 @@ Assess escalation risk. Output STRICT JSON ONLY."""
         else:
             reasons = []
 
-        # Scale escalation_risk to a 0-100 score so frontend consumers that
-        # render "/100" (e.g. the Escalation Alerts page) show a score that
-        # agrees with risk_level — e.g. 0.81 -> 81/100 + "high".
+        # Scale escalation_risk to a 0-100 score for frontend consumers
         result["escalation_risk"] = int(round(risk * 100))
         result["risk_level"] = risk_level
         result["reasoning"] = reasons
@@ -187,5 +163,5 @@ def _fallback(
         else "Continue monitoring and attempt to resolve in current tier."
     )
     result["alert_triggered"] = risk_level == "high"
-    result["note"] = "fallback used — Groq unavailable or errored"
+    result["note"] = "fallback used — API errored"
     return result

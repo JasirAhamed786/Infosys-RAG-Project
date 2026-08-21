@@ -1,7 +1,7 @@
 """
 intent_sentiment_agent.py
 
-Intent & Sentiment Analysis Agent (Groq — Mixtral 8x7B)
+Intent & Sentiment Analysis Agent (Groq)
 """
 
 from __future__ import annotations
@@ -12,32 +12,33 @@ from typing import Any
 from app.core.config import settings
 from app.utils.llm_client import JSONParseError, groq_client
 
-# Strict JSON-only system prompt to enforce structured output
-SYSTEM_PROMPT = """You are an Intent & Sentiment Analysis agent for a customer support coaching system.
+# Strict JSON-only system prompt to enforce structured output without markdown formatting
+SYSTEM_PROMPT = """You are an expert customer support AI analyst. 
+Your ONLY job is to analyze the user's message and output a raw JSON object.
 
-Your task: Analyze the customer's message and output STRICT JSON ONLY — no other text.
-
-Analyze:
-1. INTENT: What does the customer want? Choose a clear, specific label (e.g. "billing_issue", "technical_problem", "refund_request", "account_access", "general_question", "complaint", "cancellation_request", "feature_request", "payment_dispute", "other")
-2. EMOTION: What is the customer's emotional state? (e.g. "calm", "frustrated", "angry", "confused", "satisfied", "anxious", "disappointed", "neutral", "urgent")
-3. FRUSTRATION_SCORE: A number 0-100 indicating how frustrated the customer seems:
+You must evaluate the customer's text and determine:
+1. intent: The core reason for their message (e.g., "billing_issue", "technical_problem", "refund_request", "account_access", "general_question", "complaint", "cancellation_request", "feature_request", "payment_dispute", "other")
+2. emotion: Their primary emotional state (e.g., "calm", "frustrated", "angry", "confused", "satisfied", "anxious", "disappointed", "neutral", "urgent")
+3. frustration_score: A number 0-100 indicating how frustrated the customer seems:
    - 0-20: Very calm, satisfied, or neutral
    - 21-40: Mildly concerned or impatient
    - 41-60: Frustrated or annoyed
    - 61-80: Very frustrated or angry
    - 81-100: Extremely angry or escalated
-4. SATISFACTION_TREND: Compared to the previous message, is the customer's satisfaction:
+4. satisfaction_trend: Compared to the previous message, is the customer's satisfaction:
    - "improving" — getting more satisfied/calm
    - "declining" — getting more frustrated/angry
    - "stable" — same as before
    - "baseline" — this is the first message
 
-Output format (EXACTLY this JSON, no other text):
+CRITICAL INSTRUCTION: You must output ONLY a valid JSON object. Do not include markdown formatting, code blocks (like ```json), conversational text, or explanations. 
+
+Output exactly this JSON format and nothing else:
 {
   "intent": "string",
   "emotion": "string",
-  "frustration_score": number,
-  "satisfaction_trend": "improving|declining|stable|baseline"
+  "frustration_score": 0,
+  "satisfaction_trend": "string"
 }"""
 
 
@@ -78,8 +79,8 @@ Analyze this customer message and return STRICT JSON ONLY."""
                 model=model,
                 system_prompt=SYSTEM_PROMPT,
                 user_prompt=user_prompt,
-                temperature=0.2,  # Low temperature for consistent classification
-                max_tokens=256,
+                temperature=0.1,  # Low temperature for consistent classification
+                max_tokens=1024,  # Increased to prevent token cutoff errors
             )
 
             if isinstance(result, dict) and "error" in result:
@@ -138,7 +139,7 @@ def _heuristic_analysis(
         intent = "billing_issue"
     elif any(word in msg_lower for word in ["refund", "money back", "return", "cancel", "reimburs"]):
         intent = "refund_request"
-    elif any(word in msg_lower for word in ["error", "bug", "not working", "broken", "crash", "technical", "issue", "fail"]):
+    elif any(word in msg_lower for word in ["error", "bug", "not working", "broken", "crash", "technical", "issue", "fail", "taps", "app"]):
         intent = "technical_problem"
     elif any(word in msg_lower for word in ["login", "password", "access", "account", "forgot"]):
         intent = "account_access"
@@ -151,7 +152,7 @@ def _heuristic_analysis(
     if any(word in msg_lower for word in ["unclear", "confus", "don't understand", "explain"]):
         emotion = "confused"
         frustration_score = 35
-    elif any(w in msg_lower for w in ["angry", "furious", "terrible", "worst", "unacceptable", "horrible", "ridiculous", "ignored", "unbelievable", "livid", "outraged"]):
+    elif any(w in msg_lower for w in ["angry", "furious", "terrible", "worst", "unacceptable", "horrible", "ridiculous", "ignored", "unbelievable", "livid", "outraged", "fool", "idiot"]):
         emotion = "angry"
         frustration_score = 85
     elif any(word in msg_lower for word in ["frustrat", "annoy", "tired", "waiting", "sick of", "fed up"]):

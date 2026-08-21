@@ -4,18 +4,11 @@ llm_client.py
 Unified LLM client interface for Groq and Gemini.
 
 Provides:
-- GroqClient: For Llama models (simulator + intent/sentiment)
-- GeminiClient: For Gemini models (knowledge recommendation)
+- GroqClient: For Llama/OpenAI models (simulator + intent/sentiment/coaching)
+- GeminiClient: For Gemini models (knowledge recommendation/reports)
 - Streaming support for the simulator agent (stream=True)
 - Retry-with-backoff for 429 rate limit errors
-- JSON-only mode with parsing + retry for intent/sentiment agent
-
-FIX: GroqClient.generate_json() previously only caught JSONParseError,
-so any other API error (bad model, auth, malformed request) raised
-straight out of the function instead of returning an error dict.
-Callers' silent fallback logic then masked the real cause.
-generate_json() now catches everything and ALWAYS returns a dict,
-printing the real error so it's visible in the backend console.
+- Bulletproof JSON parsing and extraction
 """
 
 from __future__ import annotations
@@ -41,7 +34,7 @@ class LLMRequest:
     system_prompt: str | None = None
     json_mode: bool = True
     temperature: float = 0.7
-    max_tokens: int = 1024
+    max_tokens: int = 2048  # Increased to prevent token cutoff errors
 
 
 class LLMError(Exception):
@@ -78,34 +71,37 @@ def _retry_with_backoff(func: Callable, max_retries: int = None, base_delay: flo
 
 
 def _parse_json_response(text: str, max_retries: int = 2) -> dict[str, Any]:
-    """Parse JSON from LLM response, with retry logic."""
+    """Parse JSON from LLM response, highly resilient to markdown wrappers."""
+    if not text:
+        return {}
+        
     cleaned = text.strip()
-    if "```json" in cleaned:
-        cleaned = cleaned.split("```json")[1].split("```")[0].strip()
-    elif "```" in cleaned:
-        cleaned = cleaned.split("```")[1].split("```")[0].strip()
 
-    for attempt in range(max_retries + 1):
+    # Safely strip markdown code blocks if the model included them
+    if cleaned.startswith("```"):
+        cleaned = re_module.sub(r"^```(?:json)?\s*", "", cleaned)
+        cleaned = re_module.sub(r"\s*```$", "", cleaned)
+        cleaned = cleaned.strip()
+
+    # Attempt a direct parse first
+    try:
+        return json.loads(cleaned)
+    except json.JSONDecodeError:
+        pass
+
+    # If direct parse fails, use regex to find the first JSON object
+    json_match = re_module.search(r"(\{.*\})", cleaned, re_module.DOTALL)
+    if json_match:
         try:
-            return json.loads(cleaned)
-        except json.JSONDecodeError as e:
-            if attempt >= max_retries:
-                raise JSONParseError(
-                    f"Failed to parse LLM JSON response after {max_retries} retries. "
-                    f"Error: {e}. Raw text: {cleaned[:500]}"
-                )
-            cleaned = cleaned.strip()
-            if cleaned.endswith(","):
-                cleaned = cleaned[:-1]
-            json_match = re_module.search(r"\{.*\}", cleaned, re_module.DOTALL)
-            if json_match:
-                cleaned = json_match.group(0)
+            return json.loads(json_match.group(1))
+        except json.JSONDecodeError:
+            pass
 
-    raise JSONParseError("Failed to parse JSON response")
+    raise JSONParseError(f"Failed to parse JSON response. Raw text snippet: {cleaned[:500]}")
 
 
 class GroqClient:
-    """Client for Groq API (Llama models)."""
+    """Client for Groq API."""
 
     def __init__(self):
         self.api_key = settings.GROQ_API_KEY
@@ -117,7 +113,7 @@ class GroqClient:
         from groq import Groq
         return Groq(api_key=self.api_key)
 
-    def _call_groq(self, model: str, messages: list[dict[str, str]], json_mode: bool = False, temperature: float = 0.7, max_tokens: int = 1024, stream: bool = False) -> Any:
+    def _call_groq(self, model: str, messages: list[dict[str, str]], json_mode: bool = False, temperature: float = 0.7, max_tokens: int = 2048, stream: bool = False) -> Any:
         if not self.api_key:
             raise LLMError("GROQ_API_KEY not configured")
         client = self._get_client()
@@ -130,6 +126,7 @@ class GroqClient:
         }
         if json_mode:
             kwargs["response_format"] = {"type": "json_object"}
+            
         try:
             return client.chat.completions.create(**kwargs)
         except Exception as e:
@@ -138,10 +135,8 @@ class GroqClient:
                 raise RateLimitError(f"Groq rate limited: {e}")
             raise LLMError(f"Groq API error: {e}")
 
-    def generate_json(self, model: str, system_prompt: str, user_prompt: str, temperature: float = 0.7, max_tokens: int = 1024) -> dict[str, Any]:
-        """Always returns a dict. On ANY failure (auth, bad model, rate
-        limit exhausted, malformed JSON), returns {"error": "..."} instead
-        of raising, and prints the real reason so it's visible in logs."""
+    def generate_json(self, model: str, system_prompt: str, user_prompt: str, temperature: float = 0.7, max_tokens: int = 2048) -> dict[str, Any]:
+        """Always returns a dict. Catches token limits, auth errors, and malformed JSON safely."""
         text = None
 
         def _do_generate():
@@ -171,15 +166,17 @@ class GroqClient:
             print(f"[GroqClient] Unexpected error in generate_json (model={model}): {type(e).__name__}: {e}")
             return {"error": f"unexpected_error: {e}"}
 
-    def generate_stream(self, model: str, system_prompt: str, user_prompt: str, temperature: float = 0.7, max_tokens: int = 1024) -> Generator[str, None, None]:
+    def generate_stream(self, model: str, system_prompt: str, user_prompt: str, temperature: float = 0.7, max_tokens: int = 2048) -> Generator[str, None, None]:
         if not self.api_key:
             yield "[ERROR: GROQ_API_KEY not configured]"
             return
+            
         def _do_stream():
             return self._call_groq(
                 model=model, messages=[{"role": "system", "content": system_prompt}, {"role": "user", "content": user_prompt}],
                 json_mode=False, temperature=temperature, max_tokens=max_tokens, stream=True,
             )
+            
         try:
             stream = _retry_with_backoff(_do_stream)
             for chunk in stream:
@@ -191,7 +188,7 @@ class GroqClient:
 
 
 class GeminiClient:
-    """Client for Google Gemini API (using google-genai package)."""
+    """Client for Google Gemini API."""
 
     def __init__(self):
         self.api_key = settings.GEMINI_API_KEY
@@ -203,8 +200,8 @@ class GeminiClient:
         from google import genai
         return genai.Client(api_key=self.api_key)
 
-    def generate_json(self, model: str, system_prompt: str, user_prompt: str, temperature: float = 0.7, max_tokens: int = 1024) -> dict[str, Any]:
-        """Generate a JSON response from Gemini. Uses retry-with-backoff for rate limits and JSON parsing retry."""
+    def generate_json(self, model: str, system_prompt: str, user_prompt: str, temperature: float = 0.7, max_tokens: int = 2048) -> dict[str, Any]:
+        """Generate a JSON response from Gemini with backoff logic."""
         if not self.api_key:
             print("[GeminiClient] WARNING: GEMINI_API_KEY not set. Returning mock.")
             return {"error": "GEMINI_API_KEY not configured", "mock": True}

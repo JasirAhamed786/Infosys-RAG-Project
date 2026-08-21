@@ -1,7 +1,7 @@
 """
 summary_agent.py
 
-Post-Interaction Summary & Coaching Agent (Gemini 2.0 Flash)
+Post-Interaction Summary & Coaching Agent (Gemini)
 Milestone 4 — Generates structured session debrief, sentiment timeline,
 resolution quality scoring, and managerial insights.
 """
@@ -18,6 +18,10 @@ from app.utils.llm_client import gemini_client
 SUMMARY_SYSTEM_PROMPT = """You are a Quality Assurance & Senior Support Coaching Analyst.
 
 Your task is to analyze a completed customer support transcript and output STRICT JSON ONLY.
+
+CRITICAL INSTRUCTION: You must output STRICTLY valid JSON only. 
+Do NOT wrap your response in markdown blocks (e.g., do not use ```json).
+Do NOT include any conversational text before or after the JSON.
 
 Analyze:
 1. INTERACTION_SUMMARY: 2-3 sentences summarizing the customer's issue, the agent's actions, and the outcome.
@@ -78,11 +82,11 @@ Evaluate this conversation and return STRICT JSON matching the required schema."
     try:
         if gemini_client.api_key:
             result = gemini_client.generate_json(
-                model=getattr(settings, "GEMINI_KNOWLEDGE_MODEL", "gemini-2.0-flash"),
+                model=getattr(settings, "GEMINI_KNOWLEDGE_MODEL", "gemini-1.5-flash"),
                 system_prompt=SUMMARY_SYSTEM_PROMPT,
                 user_prompt=user_prompt,
                 temperature=0.3,
-                max_tokens=1024,
+                max_tokens=2048,  # Increased to handle long conversation arrays
             )
 
             if isinstance(result, dict) and "interaction_summary" in result:

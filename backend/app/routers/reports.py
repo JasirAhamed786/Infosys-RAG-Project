@@ -1,7 +1,7 @@
 """
 reports.py
 
-Milestone 4 — Post-Interaction Reports API Router.
+Milestone 4 — Post-Interaction Reports API Router with safe MongoDB upsert.
 """
 
 from __future__ import annotations
@@ -49,8 +49,7 @@ def generate_report(session_id: str):
     )
 
     now = dt.datetime.utcnow()
-    report_doc = {
-        "_id": str(uuid4()),
+    report_fields = {
         "session_id": session_id,
         "mode": session.get("mode", "Simulator"),
         "product_context": session.get("product_context", ""),
@@ -63,13 +62,16 @@ def generate_report(session_id: str):
         "escalation_triggers": report_data.get("escalation_triggers"),
         "knowledge_gaps": report_data.get("knowledge_gaps"),
         "total_turns": len([m for m in messages if m.get("role") == "customer"]),
-        "created_at": now,
+        "updated_at": now,
     }
 
-    # Upsert report
+    # Safe upsert: set _id ONLY when document is newly created
     mongo.reports.update_one(
         {"session_id": session_id},
-        {"$set": report_doc},
+        {
+            "$set": report_fields,
+            "$setOnInsert": {"_id": str(uuid4()), "created_at": now},
+        },
         upsert=True,
     )
 
@@ -79,9 +81,11 @@ def generate_report(session_id: str):
         {"$set": {"status": "completed", "completed_at": now}},
     )
 
-    # Convert for JSON response
-    report_doc["created_at"] = report_doc["created_at"].isoformat()
-    return report_doc
+    # Format for JSON response
+    report_fields["_id"] = session_id
+    report_fields["created_at"] = now.isoformat()
+    report_fields["updated_at"] = now.isoformat()
+    return report_fields
 
 
 @router.get("/{session_id}")
@@ -94,6 +98,8 @@ def get_report(session_id: str):
 
     if isinstance(report.get("created_at"), dt.datetime):
         report["created_at"] = report["created_at"].isoformat()
+    if isinstance(report.get("updated_at"), dt.datetime):
+        report["updated_at"] = report["updated_at"].isoformat()
     return report
 
 
@@ -106,5 +112,7 @@ def list_reports():
     for doc in cursor:
         if isinstance(doc.get("created_at"), dt.datetime):
             doc["created_at"] = doc["created_at"].isoformat()
+        if isinstance(doc.get("updated_at"), dt.datetime):
+            doc["updated_at"] = doc["updated_at"].isoformat()
         reports.append(doc)
     return {"reports": reports, "total": len(reports)}
