@@ -8,10 +8,26 @@ Generates live coaching tips and suggested responses for the support agent.
 
 from __future__ import annotations
 
+import re
 from typing import Any
 
 from app.core.config import settings
 from app.utils.llm_client import groq_client
+
+
+def _strip_markdown(text: str) -> str:
+    """Defensive safety net: strip common markdown syntax in case the model
+    ignores the plain-text instruction. suggested_response is meant to be
+    pasted directly into a live chat box, so stray **/_/# characters would
+    show up literally to the customer."""
+    if not text:
+        return text
+    text = re.sub(r"\*\*(.*?)\*\*", r"\1", text)   # **bold**
+    text = re.sub(r"(?<!\w)_(.*?)_(?!\w)", r"\1", text)  # _italics_
+    text = re.sub(r"^\s{0,3}#{1,6}\s+", "", text, flags=re.MULTILINE)  # headers
+    text = re.sub(r"^\s*[-*]\s+", "", text, flags=re.MULTILINE)  # bullet markers
+    text = re.sub(r"^\s*\d+\.\s+", "", text, flags=re.MULTILINE)  # numbered list markers
+    return text.strip()
 
 # Strict JSON-only system prompt to enforce structured coaching output.
 COACHING_SYSTEM_PROMPT = """You are a Coaching & Response Suggestion agent for an AI customer support coaching system.
@@ -23,7 +39,7 @@ Do NOT wrap your response in markdown blocks (e.g., do not use ```json).
 Do NOT include any conversational text before or after the JSON.
 
 Rules:
-1. suggested_response: A complete, professional draft reply the agent can send. Be empathetic, concise, and actionable. Use the recommended knowledge if relevant.
+1. suggested_response: A complete, professional draft reply the agent can send AS PLAIN TEXT — this gets pasted directly into a live chat box. Do NOT use markdown formatting of any kind (no **bold**, no _italics_, no bullet/numbered list syntax, no headers). If you need to list steps, write them as a plain sentence flow (e.g. "First ..., then ..., finally ...") instead of a numbered markdown list. Be empathetic, concise, and actionable. Use the recommended knowledge if relevant.
 2. tone_feedback: ONE short sentence on the tone your suggested response uses (e.g., warm, firm, empathetic) and why it fits.
 3. communication_tips: An array of exactly 3 short, specific coaching tips for the agent (what to say, what to ask, what to avoid).
 4. confidence: A number 0.0 to 1.0 reflecting how confident you are in this suggestion.
@@ -109,7 +125,7 @@ Generate a coaching suggestion. Output STRICT JSON ONLY."""
             print("[coaching_agent] Empty suggested_response from LLM. Using fallback.")
             return _fallback(result, intent, sentiment)
 
-        result["suggested_response"] = suggested_response
+        result["suggested_response"] = _strip_markdown(suggested_response)
         result["tone_feedback"] = str(gres.get("tone_feedback", "")).strip()
 
         raw_tips = gres.get("communication_tips", [])

@@ -5,13 +5,27 @@ LangGraph orchestration pipeline — Milestone 2 real implementation,
 now extended for Milestone 3 Manual + Replay mode support.
 
 Staged flow:
-- Stage 1: Intent & Sentiment Analysis always runs FIRST (every turn)
+- Stage 1a: Customer Simulator runs FIRST in Simulator Mode ONLY — it
+  must produce this turn's customer message before Intent/Sentiment can
+  analyze it (see Stage 1b fix note below).
+- Stage 1b: Intent & Sentiment Analysis runs on that fresh message
+  (or on the externally-supplied message in Manual/Replay mode).
 - Stage 2: Knowledge Recommendation runs conditionally when intent
   suggests the customer needs information
-- Stage 3: Customer Simulator runs in Simulator Mode ONLY
-- Stage 4: Coaching & Response Suggestion (real Gemini agent, every turn)
-- Stage 5: Escalation Risk Monitor (real Gemini agent, every turn)
-- Stage 6: Summary remains a mock stub (Milestone 4)
+- Stage 3: Coaching & Response Suggestion (real Gemini agent, every turn)
+- Stage 4: Escalation Risk Monitor (real Gemini agent, every turn)
+- Stage 5: Post-Interaction Summary (real Gemini agent, run separately
+  after a session ends — see summary_agent.py / reports.py)
+
+FIX (previously a bug): Stage 1a and 1b used to run concurrently via
+ThreadPoolExecutor. In Simulator mode this meant Intent/Sentiment
+analyzed the last customer message already sitting in
+conversation_history — i.e. the PREVIOUS turn — while the Simulator
+generated the NEW message in parallel. The API response then paired a
+brand-new customer_simulation.customer_message with a stale
+intent_sentiment reading, so the coaching console always displayed
+sentiment for the message before the one on screen. Simulator now runs
+first and its output feeds Intent/Sentiment.
 
 Manual / Replay mode support:
   In these two modes, the "customer message" doesn't come from the
@@ -59,10 +73,11 @@ def run_pipeline(
     """Execute the orchestration pipeline with REAL agent calls.
 
     Pipeline order:
-    1. Intent & Sentiment Analysis (always runs first)
-    2. Knowledge Recommendation (conditional — runs if intent suggests
+    1. Customer Simulator (Simulator mode only) — generates this turn's
+       customer message first
+    2. Intent & Sentiment Analysis — analyzes that fresh message
+    3. Knowledge Recommendation (conditional — runs if intent suggests
        information need)
-    3. Customer Simulator (runs in Simulator Mode only)
     4. Coaching & Response Suggestion (real Gemini agent, every turn)
     5. Escalation Risk Monitor (real Gemini agent, every turn)
 
@@ -102,56 +117,28 @@ def run_pipeline(
     print(f"[pipeline] customer_message_to_analyze: "
           f"'{customer_message_to_analyze[:80]}{'...' if len(customer_message_to_analyze) > 80 else ''}'")
 
-# ============================================================
-    # Stage 1: Intent & Sentiment + Simulator (RUN IN PARALLEL)
     # ============================================================
-    # These two stages are independent of one another, so we run them
-    # concurrently to cut wall-clock latency. Coaching, Knowledge and
-    # Escalation depend on the intent result, so they run after this
-    # first wave.
-    skip_intent = not customer_message_to_analyze or not customer_message_to_analyze.strip()
-
+    # Stage 1: Customer Simulator runs FIRST in Simulator Mode, THEN
+    # Intent & Sentiment Analysis.
+    # ============================================================
+    # BUG FIX (was): Simulator and Intent/Sentiment previously ran
+    # concurrently via ThreadPoolExecutor. In Simulator mode, the
+    # customer's message for THIS turn doesn't exist yet when the
+    # pipeline call begins — the Simulator Agent generates it during
+    # this same call. Because they ran in parallel, Intent/Sentiment
+    # always analyzed conversation_history's last stored customer
+    # message (i.e. the PREVIOUS turn), while customer_simulation
+    # carried the FRESH new message — so the sentiment panel shown next
+    # to a given customer bubble was always one turn behind. Running
+    # Simulator first and feeding its output into
+    # customer_message_to_analyze before Intent/Sentiment runs fixes
+    # this. Manual/Replay mode is unaffected (Simulator is skipped and
+    # customer_message_to_analyze already holds the caller-supplied text).
     run_sim = (not skip_simulator) and mode == "Simulator"
 
-    def _do_intent() -> dict:
-        if skip_intent:
-            print("[pipeline] Intent & Sentiment SKIPPED — no customer message to analyze")
-            return {
-                "agent": "intent_sentiment",
-                "turn_index": turn_index,
-                "intent": "general_question",
-                "emotion": "neutral",
-                "frustration_score": 30,
-                "satisfaction_trend": "baseline",
-                "note": "skipped — no customer message available for analysis",
-            }
-        print(f"[pipeline] Intent & Sentiment Analysis (turn {turn_index})")
-        result = _safe_run_agent(
-            agent_name="intent_sentiment",
-            agent_func=run_intent_sentiment_agent,
-            session_id=session_id,
-            customer_message=customer_message_to_analyze,
-            turn_index=turn_index,
-            conversation_context=conversation_history,
-        )
-        print(f"[pipeline] Intent: {result.get('intent')} | "
-              f"Emotion: {result.get('emotion')} | "
-              f"Frustration: {result.get('frustration_score')}")
-        return result
-
-    def _do_simulator() -> dict:
-        if not run_sim:
-            print("[pipeline] Customer Simulator skipped (mode not Simulator or skip_simulator=True)")
-            return {
-                "agent": "customer_simulator",
-                "turn_index": turn_index,
-                "customer_message": "",
-                "internal_frustration_level": 35,
-                "metadata": {"tone": "neutral", "language": "en"},
-                "note": "skipped — not Simulator mode",
-            }
+    if run_sim:
         print(f"[pipeline] Customer Simulator (turn {turn_index})")
-        result = _safe_run_agent(
+        customer_simulation = _safe_run_agent(
             agent_name="simulator",
             agent_func=run_simulator_agent,
             session_id=session_id,
@@ -164,18 +151,50 @@ def run_pipeline(
             conversation_history=conversation_history,
         )
         print(f"[pipeline] Simulator frustration: "
-              f"{result.get('internal_frustration_level')}")
-        return result
+              f"{customer_simulation.get('internal_frustration_level')}")
+        fresh_customer_message = customer_simulation.get("customer_message", "")
+        if fresh_customer_message and fresh_customer_message.strip():
+            # This turn's real analysis target is the message the
+            # Simulator just generated — not whatever history lookup
+            # produced above.
+            customer_message_to_analyze = fresh_customer_message
+    else:
+        print("[pipeline] Customer Simulator skipped (mode not Simulator or skip_simulator=True)")
+        customer_simulation = {
+            "agent": "customer_simulator",
+            "turn_index": turn_index,
+            "customer_message": "",
+            "internal_frustration_level": 35,
+            "metadata": {"tone": "neutral", "language": "en"},
+            "note": "skipped — not Simulator mode",
+        }
 
-    wave1 = {
-        "intent": _do_intent,
-        "simulator": _do_simulator,
-    }
+    skip_intent = not customer_message_to_analyze or not customer_message_to_analyze.strip()
 
-    with ThreadPoolExecutor(max_workers=2) as executor:
-        wave1_futs = {key: executor.submit(fn) for key, fn in wave1.items()}
-        intent_sentiment = wave1_futs["intent"].result()
-        customer_simulation = wave1_futs["simulator"].result()
+    if skip_intent:
+        print("[pipeline] Intent & Sentiment SKIPPED — no customer message to analyze")
+        intent_sentiment = {
+            "agent": "intent_sentiment",
+            "turn_index": turn_index,
+            "intent": "general_question",
+            "emotion": "neutral",
+            "frustration_score": 30,
+            "satisfaction_trend": "baseline",
+            "note": "skipped — no customer message available for analysis",
+        }
+    else:
+        print(f"[pipeline] Intent & Sentiment Analysis (turn {turn_index})")
+        intent_sentiment = _safe_run_agent(
+            agent_name="intent_sentiment",
+            agent_func=run_intent_sentiment_agent,
+            session_id=session_id,
+            customer_message=customer_message_to_analyze,
+            turn_index=turn_index,
+            conversation_context=conversation_history,
+        )
+        print(f"[pipeline] Intent: {intent_sentiment.get('intent')} | "
+              f"Emotion: {intent_sentiment.get('emotion')} | "
+              f"Frustration: {intent_sentiment.get('frustration_score')}")
 
     # ============================================================
     # Manual / Replay: surface the externally-supplied customer message

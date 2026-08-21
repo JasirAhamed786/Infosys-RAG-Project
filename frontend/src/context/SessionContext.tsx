@@ -344,10 +344,16 @@ case 'AGENT_MESSAGE_SENT':
         latestEscalation: escalation,
         escalationHistory: [...state.escalationHistory, historyEntry],
         turnStatus: 'idle',
-        turnCount: state.turnCount + 1,
+        // BUG FIX (was: state.turnCount + 1): the backend assigns
+        // agent turn_index = N and customer turn_index = N + 1 (see
+        // simulator_agent.py). The next agent message must start at
+        // customerTurnIndex + 1, not turnCount + 1 — otherwise round
+        // (N+1)'s agent message reuses the same turn_index as round
+        // N's customer message, causing duplicate turn labels in the
+        // Reports/Summary Agent's sentiment journey.
+        turnCount: customerTurnIndex + 1,
       }
     }
-
     case 'TURN_ERROR': {
       // Flag the optimistic agent message as failed so the user sees a clear
       // "failed to send" indicator instead of a message that silently never
