@@ -129,7 +129,7 @@ On the frontend, all session state (active conversation, live agent outputs, esc
 - [MongoDB](https://www.mongodb.com/) (via Motor/PyMongo) — session, message, and report persistence
 - [ChromaDB](https://www.trychroma.com/) — shared vector collection for RAG-based knowledge retrieval
 - [sentence-transformers](https://www.sbert.net/) (`all-MiniLM-L6-v2`) — embedding model for RAG
-- [Groq](https://groq.com/) (Llama 3.3 70B) — Customer Simulator + Intent/Sentiment agents (chosen for low latency)
+- [Groq](https://groq.com/)  — Customer Simulator + Intent/Sentiment agents (chosen for low latency)
 - [Google Gemini](https://ai.google.dev/) — Knowledge, Coaching, Escalation, and Post-Interaction Summary agents (chosen for reasoning quality)
 
 **Frontend**
